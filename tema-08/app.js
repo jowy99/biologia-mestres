@@ -133,7 +133,8 @@
   // Glossari
   const glossCh = ALL.find(c => c.num === 7);
   const GLOSS = (glossCh ? glossCh.intro : []).map(l => l.match(/^- \*\*(.+?):\*\*\s*(.*)$/)).filter(Boolean)
-    .map(m => ({ term: m[1], def: m[2], plain: m[2].replace(/\*/g, '') }));
+    .map(m => ({ term: m[1], def: m[2], plain: m[2].replace(/\*/g, '') }))
+    .concat((window.TERMES || []).map(t => ({ term: t.term, def: t.def, plain: t.def })));
   const chText = {};
   CH.filter(c => c.num <= 6).forEach(c => { chText[c.num] = norm(c.intro.join(' ') + ' ' + c.sections.map(s => s.title + ' ' + s.lines.join(' ')).join(' ')); });
   GLOSS.forEach(g => {
@@ -170,6 +171,31 @@
     const x = secById[s];
     return x ? `<a href="#teoria/${x.c}/${x.s.id}">Veure a la teoria §${s}</a>` : `§${s}`;
   };
+
+  // Paraules del glossari dins d'un text: es poden tocar per veure'n la definició
+  function termKeys(text) {
+    const seen = new Set(), keys = [];
+    for (const m of String(text).matchAll(GL_PAT)) {
+      const k = m[1].toLowerCase(), g = GL_BY.get(k);
+      if (g && !seen.has(g.term)) { seen.add(g.term); keys.push(k); }
+    }
+    return keys;
+  }
+  function glText(s) {
+    const seen = new Set();
+    return esc(s).replace(GL_PAT, w => {
+      const k = w.toLowerCase(), g = GL_BY.get(k);
+      if (!g || seen.has(g.term)) return w;
+      seen.add(g.term);
+      return `<button type="button" class="gl" data-key="${k}" aria-haspopup="dialog">${w}</button>`;
+    });
+  }
+  // Xips amb les paraules de les respostes (dins d'un botó de resposta no hi pot haver un altre botó)
+  function termChips(texts, except = '') {
+    const skip = new Set(termKeys(except).map(k => GL_BY.get(k).term));
+    const keys = termKeys(texts.join(' · ')).filter(k => !skip.has(GL_BY.get(k).term)).slice(0, 8);
+    return keys.length ? `<div class="q-terms"><span class="q-terms-t">${ICON('book')} No entens alguna paraula? Toca-la:</span>${keys.map(k => `<button type="button" class="gl gl-chip" data-key="${k}" aria-haspopup="dialog">${esc(GL_BY.get(k).term)}</button>`).join('')}</div>` : '';
+  }
 
   // ================= NAVEGACIÓ =================
   const VIEWS = ['teoria', 'repas', 'cellula', 'comparar', 'targetes', 'test', 'classifica', 'clau', 'glossari', 'notes', 'progres'];
@@ -354,7 +380,9 @@
       revealCell(e);
     });
 
-    // Popover de definició (un de sol per a tota la pàgina)
+  }
+  // Popover de definició (un de sol per a tota la pàgina; funciona a totes les vistes)
+  function initGlPop() {
     const pop = document.createElement('div');
     pop.id = 'gl-pop'; pop.className = 'gl-pop';
     pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Definició'); pop.tabIndex = -1;
@@ -378,15 +406,13 @@
     }
     function hidePop(back) { if (pop.hidden) return; pop.hidden = true; if (back && opener) opener.focus(); opener = null; }
     pop.addEventListener('click', e => { if (e.target.closest('.gl-pop-close')) hidePop(true); });
-    $('#chapter').addEventListener('click', e => {
+    document.addEventListener('click', e => {
       const gl = e.target.closest('.gl'); if (!gl) return;
-      e.stopPropagation();
       if (opener === gl && !pop.hidden) hidePop(false); else showPop(gl);
     });
     document.addEventListener('click', e => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest('.gl')) hidePop(false); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') hidePop(true); });
   }
-  // Marcador fluorescent sobre les definicions i termes clau de cada apartat (només negretes del manual)
   // Marcador fluorescent sobre les definicions i termes clau de cada apartat (només negretes del manual)
   function markEssential(box) {
     $$('.sec', box).forEach(sec => {
@@ -1158,9 +1184,9 @@
     $('#quiz').innerHTML = `<div class="qbar"><span style="width:${Q.i / Q.pool.length * 100}%"></span></div>
       <div class="card q-card">
         <div class="q-meta"><span>${Q.review ? 'Repàs d\'errors · ' : ''}Pregunta ${Q.i + 1} de ${Q.pool.length}</span><span>Encerts: ${Q.ok}</span></div>
-        <div class="q-text">${mc ? esc(q.q) : '«' + esc(q.t) + '»'}</div>
+        <div class="q-text">${mc ? glText(q.q) : '«' + glText(q.t) + '»'}</div>
         <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt" type="button" data-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
-        <div id="q-exp" aria-live="polite"></div>
+        ${mc ? termChips(q.o, q.q) : ''}<div id="q-exp" aria-live="polite"></div>
       </div>
       <p style="text-align:center;margin-top:14px"><button class="btn small" id="q-quit" type="button">Surt del test</button></p>`;
     $('#q-quit').addEventListener('click', quizSetup);
@@ -1171,7 +1197,7 @@
       noteAnswer(Q.opt.mode, q, right);
       const last = Q.i === Q.pool.length - 1;
       const extra = Q.review && right ? ' <span class="muted">Surt de la llista d\'errors.</span>' : !right ? ' <span class="muted">S\'afegeix a la llista d\'errors per repassar-la.</span>' : '';
-      $('#q-exp').innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${esc(q.e)}<br>${secLink(q.s)}${extra}</div>
+      $('#q-exp').innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${glText(q.e)}<br>${secLink(q.s)}${extra}</div>
         <p style="text-align:right;margin:14px 0 0"><button class="btn primary" id="q-next" type="button">${last ? 'Veure resultat' : 'Següent →'}</button></p>`;
       $('#q-next').focus();
       $('#q-next').addEventListener('click', () => { Q.i++; Q.i < Q.pool.length ? askQ() : endQ(); });
@@ -1228,8 +1254,9 @@
     $('#quiz').innerHTML = `<div class="qbar"><span style="width:${EX.i / n * 100}%"></span></div>
       <div class="card q-card">
         <div class="q-meta"><span>Simulacre · Pregunta ${EX.i + 1} de ${n}</span><span class="ex-time">${ICON('timer')} <span id="ex-time"></span></span></div>
-        <div class="q-text">${mc ? esc(q.q) : '«' + esc(q.t) + '»'}</div>
+        <div class="q-text">${mc ? glText(q.q) : '«' + glText(q.t) + '»'}</div>
         <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt" type="button" data-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
+        ${mc ? termChips(q.o, q.q) : ''}
       </div>
       <p style="text-align:center;margin-top:14px"><button class="btn small" id="ex-stop" type="button">Acaba l'examen ara</button></p>`;
     examClock();
@@ -1398,7 +1425,7 @@
     if (it.kind === 'card') {
       $('#v-repas').innerHTML = `${head}<div class="card q-card rp-card">
         <p class="rp-kicker">Targeta</p><div class="rp-term">${esc(it.g.term)}</div>
-        <div class="rp-def" id="rp-def" hidden>${inline(it.g.def)}</div>
+        <div class="rp-def" id="rp-def" hidden>${inline(it.g.def)}${termChips([it.g.plain], it.g.term)}</div>
         <div class="rp-actions" id="rp-act"><button class="btn primary" id="rp-show" type="button">Mostra la definició</button></div></div>`;
       $('#rp-show').addEventListener('click', () => {
         $('#rp-def').hidden = false;
@@ -1418,15 +1445,15 @@
     const opts = mc ? shuffle(q.o.map((t, j) => ({ t, ok: j === 0 }))) : [{ t: 'Vertader', ok: q.v }, { t: 'Fals', ok: !q.v }];
     $('#v-repas').innerHTML = `${head}<div class="card q-card">
       <p class="rp-kicker">${mc ? 'Pregunta que vas fallar' : 'Mite que vas fallar'}</p>
-      <div class="q-text">${mc ? esc(q.q) : '«' + esc(q.t) + '»'}</div>
+      <div class="q-text">${mc ? glText(q.q) : '«' + glText(q.t) + '»'}</div>
       <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt" type="button" data-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
-      <div id="rp-exp" aria-live="polite"></div></div>`;
+      ${mc ? termChips(q.o, q.q) : ''}<div id="rp-exp" aria-live="polite"></div></div>`;
     $$('#v-repas .opt').forEach(b => b.addEventListener('click', () => {
       const j = +b.dataset.j, right = opts[j].ok;
       $$('#v-repas .opt').forEach((x, k) => { x.disabled = true; if (opts[k].ok) x.classList.add('right'); });
       if (!right) b.classList.add('wrong'); else RP.ok++;
       noteAnswer(it.kind, q, right);
-      $('#rp-exp').innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${esc(q.e)}<br>${secLink(q.s)}</div>
+      $('#rp-exp').innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${glText(q.e)}<br>${secLink(q.s)}</div>
         <p style="text-align:right;margin:14px 0 0"><button class="btn primary" id="rp-next" type="button">Següent →</button></p>`;
       $('#rp-next').focus();
       $('#rp-next').addEventListener('click', repasNext);
@@ -1721,5 +1748,6 @@
   window.addEventListener('afterprint', () => { const area = $('#print-area'); if (area) { area.innerHTML = ''; area.setAttribute('aria-hidden', 'true'); } });
 
   const INIT = { teoria: initTeoria, cellula: initCellula, comparar: initComparar, targetes: initTargetes, test: initTest, classifica: initClassifica, glossari: initGlossari, progres: renderProgres, repas: repasHome, clau: initClau, notes: initNotes };
+  initGlPop();
   route();
 })();

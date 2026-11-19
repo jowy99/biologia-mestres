@@ -1272,3 +1272,11 @@ h1, h2, h3 { text-wrap: balance; }
 .sec-clau ul { margin: 6px 0 0; padding-left: 1.15em; }
 .sec-clau li { margin: 3px 0; }
 .prose strong.ess { padding: 0 2px; border-radius: 3px; background: linear-gradient(transparent 50%, color-mix(in srgb, var(--accent) 30%, transparent) 50%); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+
+/* ---------- Paraules que es poden tocar a les preguntes ---------- */
+.q-text .gl { font-weight: inherit; }
+.q-terms { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 0; padding-top: 12px; border-top: 1px dashed var(--line); }
+.q-terms-t { flex-basis: 100%; display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; }
+.q-terms-t .i { width: 16px; height: 16px; flex: none; }
+.gl.gl-chip { min-height: 36px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: .9rem; text-decoration: none; }
+.rp-def .q-terms { text-align: left; }
