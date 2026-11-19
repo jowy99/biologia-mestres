@@ -1,4 +1,4 @@
-var CACHE = 'biologia-v24';
+var CACHE = 'biologia-v25';
 var FILES = [
   './',
   './index.html',

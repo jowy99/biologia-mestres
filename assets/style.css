@@ -923,7 +923,7 @@ button:disabled:active, [aria-disabled="true"]:active { transform: none; }
 @media (max-width: 360px) { .sel-hint { font-size: .85rem; text-wrap: balance; text-align: center; } }
 
 /* ---------- Taules: paraules senceres i, al mòbil, una targeta per fila ---------- */
-.study-table th, .study-table td { overflow-wrap: normal; word-break: normal; hyphens: auto; }
+.study-table th, .study-table td { overflow-wrap: normal; word-break: normal; hyphens: manual; }
 @media (max-width: 600px) {
   .table-wrap { overflow: visible; border: 0; background: transparent; }
   .study-table, .study-table tbody, .study-table tr, .study-table td { display: block; width: auto; }
@@ -935,10 +935,12 @@ button:disabled:active, [aria-disabled="true"]:active { transform: none; }
   .study-table tr:last-child { margin-bottom: 0; border-bottom: 0; }
   .study-table td { border: 0; padding: 0; margin-bottom: 8px; line-height: 1.45; }
   .study-table td:last-child { margin-bottom: 0; }
+  .study-table tr { overflow: hidden; }
   .study-table td:first-child {
-    font-family: var(--font-display); font-size: 1.08rem; color: var(--ink);
-    padding-bottom: 8px; margin-bottom: 8px;
-    border-bottom: 1px solid var(--line);
+    font-family: var(--font-display); font-size: 1.05rem; color: var(--ink);
+    margin: -14px -14px 12px; padding: 10px 14px;
+    background: color-mix(in srgb, var(--kc, var(--accent)) 12%, var(--surface));
+    border-bottom: 1px solid var(--line); border-left: 4px solid var(--kc, var(--accent));
   }
   .study-table td:not(:first-child)::before {
     content: attr(data-label); display: block;
@@ -1174,3 +1176,7 @@ mark.hl.has-note.end::after { content: "✎"; margin-left: 2px; font-size: .8em;
 .btn, .chip, .repas-link { text-wrap: balance; }
 .btn { text-align: center; }
 h1, h2, h3 { text-wrap: balance; }
+
+/* Títols dins de la teoria (h3): barra del color del capítol perquè no es confonguin amb els noms de les targetes */
+.prose h3 { display: flex; align-items: center; gap: 10px; font-size: 1.22rem; margin: 1.6em 0 .6em; }
+.prose h3::before { content: ""; flex: none; width: 5px; height: 1.1em; border-radius: 3px; background: var(--kc, var(--accent)); }
