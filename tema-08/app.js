@@ -148,8 +148,8 @@
   });
 
   // Glossari dins la teoria: patró amb tots els termes (4+ lletres), sense distingir majúscules,
-  // acceptant plurals simples (hifa → hifes, cèl·lula → cèl·lules, estoma → estomes, gen → gens)
-  const GL_BY = new Map(); // forma en minúscules → entrada del glossari
+  // acceptant plurals simples (hifa → hifes, cèl·lula → cèl·lules, estoma → estomes, gen → gens)
+  const GL_BY = new Map(); // forma en minúscules → entrada del glossari
   const GL_PAT = (() => {
     const forms = [];
     GLOSS.forEach(g => {
@@ -458,8 +458,8 @@
         <div class="prose">${blocks(s.lines)}</div></section>`).join('')}
       ${quizCard}
       <nav class="chapter-nav">
-        ${prev ? `<a class="btn" href="#teoria/${prev.num}">← ${prev.num}. ${(D.capitols[prev.num] || {}).curt}</a>` : '<span></span>'}
-        ${next ? `<a class="btn primary" href="#teoria/${next.num}">${next.num}. ${(D.capitols[next.num] || {}).curt} →</a>` : ''}
+        ${prev ? `<a class="btn" href="#teoria/${prev.num}">← ${prev.num}. ${(D.capitols[prev.num] || {}).curt}</a>` : '<span></span>'}
+        ${next ? `<a class="btn primary" href="#teoria/${next.num}">${next.num}. ${(D.capitols[next.num] || {}).curt} →</a>` : ''}
       </nav>`;
     if (!isRef) { markGlossary(box); applyMarks(box); }
 
@@ -785,7 +785,7 @@
   function showNext() {
     const b = document.createElement('button');
     b.className = 'btn primary'; b.type = 'button'; b.dataset.gameNext = '';
-    b.textContent = GAME.i + 1 >= GAME.list.length ? 'Veure resultat' : 'Següent →';
+    b.textContent = GAME.i + 1 >= GAME.list.length ? 'Veure resultat' : 'Següent →';
     $('#game-foot').appendChild(b); b.focus();
   }
   function gameAnswer(p) {
@@ -1097,7 +1097,7 @@
           </div>
         </div>
         <p class="muted setup-hint" id="q-best"></p>
-        <div class="setup-actions"><button class="btn primary" id="q-go" type="button">Comença →</button></div>
+        <div class="setup-actions"><button class="btn primary" id="q-go" type="button">Comença →</button></div>
       </div>`;
     // Actualitza el rècord i el text del botó (quantes preguntes sortiran de veritat)
     const refresh = () => {
@@ -1105,10 +1105,10 @@
       $('#q-filters').hidden = exam;
       const b = best[exam ? 'exam' : opt.mode + ':' + opt.ch];
       $('#q-best').textContent = b != null ? `La teva millor puntuació aquí: ${b}%` : '';
-      if (exam) { $('#q-go').textContent = 'Comença el simulacre · 20 preguntes →'; return; }
+      if (exam) { $('#q-go').textContent = 'Comença el simulacre · 20 preguntes →'; return; }
       const avail = SRC[opt.mode]().filter(q => opt.ch === 'tots' || q.c === +opt.ch).length;
       const k = Math.min(opt.n, avail);
-      $('#q-go').textContent = `Comença · ${k} ${k === 1 ? 'pregunta' : 'preguntes'} →`;
+      $('#q-go').textContent = `Comença · ${k} ${k === 1 ? 'pregunta' : 'preguntes'} →`;
     };
     $$('#quiz [data-f]').forEach(box => box.addEventListener('click', e => {
       const b = e.target.closest('button[data-v]'); if (!b) return;
@@ -1146,7 +1146,7 @@
       const last = Q.i === Q.pool.length - 1;
       const extra = Q.review && right ? ' <span class="muted">Surt de la llista d\'errors.</span>' : !right ? ' <span class="muted">S\'afegeix a la llista d\'errors per repassar-la.</span>' : '';
       $('#q-exp').innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${esc(q.e)}<br>${secLink(q.s)}${extra}</div>
-        <p style="text-align:right;margin:14px 0 0"><button class="btn primary" id="q-next" type="button">${last ? 'Veure resultat' : 'Següent →'}</button></p>`;
+        <p style="text-align:right;margin:14px 0 0"><button class="btn primary" id="q-next" type="button">${last ? 'Veure resultat' : 'Següent →'}</button></p>`;
       $('#q-next').focus();
       $('#q-next').addEventListener('click', () => { Q.i++; Q.i < Q.pool.length ? askQ() : endQ(); });
     }));
@@ -1271,7 +1271,7 @@
     if (ok) { G.ok++; G.streak++; runHit(G.run); if (G.streak > G.best) { G.best = G.streak; set('streak', G.best); } } else { G.streak = 0; runMiss(G.run); }
     $$('.kchoice').forEach(b => { b.disabled = true; if (+b.dataset.k === o.k) b.classList.add('right'); else if (+b.dataset.k === k) b.classList.add('wrong'); });
     $('#g-fb').innerHTML = `<div class="explain" style="margin-top:14px"><b class="${ok ? 'ok' : 'bad'}">${ok ? '✓ Correcte!' : '✗ No.'}</b> ${esc(o.e)} ${secLink(o.s)}
-      <p style="text-align:right;margin:10px 0 0"><button class="btn primary" id="g-next" type="button">Següent →</button></p></div>`;
+      <p style="text-align:right;margin:10px 0 0"><button class="btn primary" id="g-next" type="button">Següent →</button></p></div>`;
     $('#g-next').focus();
     $('#g-next').addEventListener('click', () => { G.i++; showOrg(); });
     gStats();
@@ -1352,7 +1352,7 @@
         ${doneToday ? `<p class="repas-done">${ICON('tick')} Ja has fet el repàs d'avui. Si vols, en pots fer un altre.</p>` : ''}
         <h2>${due ? `Tens ${due} ${due === 1 ? 'cosa' : 'coses'} per repassar` : 'Avui toca aprendre termes nous'}</h2>
         <p class="muted">${parts.join(' · ') || 'Ja ho domines tot. Torna demà!'}</p>
-        ${parts.length ? `<button class="btn primary" id="rp-go" type="button">${doneToday ? 'Fes un altre repàs' : 'Comença el repàs'} →</button>` : ''}
+        ${parts.length ? `<button class="btn primary" id="rp-go" type="button">${doneToday ? 'Fes un altre repàs' : 'Comença el repàs'} →</button>` : ''}
       </div>`;
     const go = $('#rp-go');
     if (go) go.addEventListener('click', startRepas);
@@ -1400,7 +1400,7 @@
       if (!right) b.classList.add('wrong'); else RP.ok++;
       noteAnswer(it.kind, q, right);
       $('#rp-exp').innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${esc(q.e)}<br>${secLink(q.s)}</div>
-        <p style="text-align:right;margin:14px 0 0"><button class="btn primary" id="rp-next" type="button">Següent →</button></p>`;
+        <p style="text-align:right;margin:14px 0 0"><button class="btn primary" id="rp-next" type="button">Següent →</button></p>`;
       $('#rp-next').focus();
       $('#rp-next').addEventListener('click', repasNext);
     }));
@@ -1475,7 +1475,7 @@
     $('#v-clau').innerHTML = `${clauHead()}${clauOrgCard(o, false)}${clauPath()}
       <div class="card clau-res" style="--kc:var(--k${o.k})"><p class="rp-kicker">Resultat${CL.miss ? '' : ' · sense errors'}</p><h3>${CLAU_K[o.k]}</h3>
         <p>${esc(o.e)}</p><p class="clau-now"><b>Visió actual:</b> ${CLAU_NOW[o.k]}</p><p>${secLink(o.s)}</p>
-        <div class="score-actions"><button class="btn primary" id="clau-next" type="button">${last ? 'Veure el resultat' : 'Següent organisme →'}</button></div></div>`;
+        <div class="score-actions"><button class="btn primary" id="clau-next" type="button">${last ? 'Veure el resultat' : 'Següent organisme →'}</button></div></div>`;
     $('#clau-next').focus();
   }
   function clauEnd() {
@@ -1531,7 +1531,7 @@
     }
     if (!$('#v-notes').hidden) renderNotes();
   }
-  // Selecció de text a la teoria → barra «Subratlla / Afegeix una nota»
+  // Selecció de text a la teoria → barra «Subratlla / Afegeix una nota»
   let lastSel = null, hideSel = null;
   function readSel() {
     const s = getSelection();
@@ -1652,7 +1652,7 @@
       '<div class="stats">' +
         '<div class="card stat"><b>' + pct(nDone, total) + '%</b><span>Teoria estudiada<br>' + nDone + ' de ' + total + ' apartats</span></div>' +
         '<div class="card stat"><b>' + known.size + '</b><span>Targetes que saps<br>de ' + GLOSS.length + ' termes</span></div>' +
-        '<div class="card stat"><b>' + nErrs + '</b><span>Errors per repassar' + (nErrs ? '<br><a href="#test">Repassa\'ls →</a>' : '') + '</span></div>' +
+        '<div class="card stat"><b>' + nErrs + '</b><span>Errors per repassar' + (nErrs ? '<br><a href="#test">Repassa\'ls →</a>' : '') + '</span></div>' +
         '<div class="card stat"><b>' + (Math.round(+get('streak', 0)) || 0) + '</b><span>Millor ratxa<br>al joc Classifica</span></div>' +
       '</div>' +
       weakHTML + '<h2 class="section-title">Per capítols</h2>' +

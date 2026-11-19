@@ -77,8 +77,8 @@
           <small>Teoria estudiada: <b>${pct}%</b>${total ? ` (${done} de ${total} apartats)` : ''}</small></div>
         <a class="repas-link" href="${t.url}#repas"><span class="repas-ico">${ICON('flame')}</span><span class="repas-txt"><b>Repàs d'avui</b><small>${due ? due + (due === 1 ? ' cosa per repassar' : ' coses per repassar') : 'Aprèn termes nous'}${streak ? ' · ' + streak + (streak === 1 ? ' dia seguit' : ' dies seguits') : ''}</small></span><span aria-hidden="true">→</span></a>
         <div class="feature-actions">
-          ${started ? `<a class="btn primary" href="${t.url}#teoria">Continua on ho vas deixar${secTxt} →</a><a class="btn" href="${t.url}">Obre el tema</a>`
-                     : `<a class="btn primary" href="${t.url}#teoria/0">Comença a estudiar →</a>`}
+          ${started ? `<a class="btn primary" href="${t.url}#teoria">Continua on ho vas deixar${secTxt} →</a><a class="btn" href="${t.url}">Obre el tema</a>`
+                     : `<a class="btn primary" href="${t.url}#teoria/0">Comença a estudiar →</a>`}
         </div>
       </div>
     </article>`);

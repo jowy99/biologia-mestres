@@ -1169,3 +1169,8 @@ mark.hl.has-note.end::after { content: "✎"; margin-left: 2px; font-size: .8em;
 .note-item + .note-item { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 .note-item p { margin: 0 0 10px; white-space: pre-line; }
 .note-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Botons de més d'una línia: repartir el text i no deixar paraules (ni fletxes) soles */
+.btn, .chip, .repas-link { text-wrap: balance; }
+.btn { text-align: center; }
+h1, h2, h3 { text-wrap: balance; }
