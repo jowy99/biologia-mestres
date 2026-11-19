@@ -1,0 +1,32 @@
+/* Prototip «L'arbre de la vida» */
+.arbre-tools { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; margin-bottom: 12px; }
+.arbre-tools .seg { height: 44px; }
+.arbre-tools .seg button { padding: 0 14px; }
+.llegenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.llegenda i, .tag i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+.nota { margin: 0 0 14px; max-width: 68ch; }
+.arbre-card { padding: 8px 4px; overflow: hidden; }
+#arbre { display: block; width: 100%; font-family: inherit; }
+#arbre .lk { fill: none; stroke: var(--line-strong); stroke-width: 1.5; transition: stroke .2s; }
+#arbre .lk.hl { stroke: var(--accent); stroke-width: 3; }
+#arbre .fade { animation: arbre-in .45s .35s ease both; }
+@keyframes arbre-in { from { opacity: 0; } to { opacity: 1; } }
+#arbre .leaf { transition: transform .7s cubic-bezier(.2, .8, .2, 1); cursor: pointer; }
+#arbre .leaf text { font-size: 14px; font-weight: 600; fill: var(--ink); dominant-baseline: central; }
+#arbre .leaf circle { stroke: var(--surface); stroke-width: 2; }
+#arbre .hit { fill: transparent; }
+#arbre .node { cursor: pointer; }
+#arbre .node circle { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
+#arbre .nlabel { font-size: 12px; font-weight: 700; fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+#arbre .sel circle { stroke: var(--accent); stroke-width: 3.5; }
+#arbre .leaf.sel text, #arbre .node.sel .nlabel { fill: var(--accent); }
+#arbre .leaf:focus, #arbre .node:focus { outline: none; }
+#arbre .leaf:focus-visible .hit { stroke: var(--accent); stroke-width: 2; rx: 8; }
+#arbre .node:focus-visible circle { stroke: var(--accent); stroke-width: 4; }
+.fitxa { padding: 18px; margin-top: 14px; }
+.fitxa h2 { margin: 0 0 8px; }
+.fitxa p { margin: 0 0 10px; }
+.fitxa p:last-child { margin-bottom: 0; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { display: inline-flex; align-items: center; font-size: .82rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { #arbre .leaf { transition: none; } #arbre .fade { animation: none; } }
