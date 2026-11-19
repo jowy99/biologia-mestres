@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La cèl·lula en 3D</title>
+<meta name="description" content="Prototip: cèl·lula animal i vegetal en 3D per girar, tallar i explorar.">
+<meta name="theme-color" content="#5763b6">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/fonts.css">
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="cellula-3d.css">
+<script src="../assets/comu.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Salta al contingut</a>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../tema-08/" title="Tornar al tema 8">
+      <span class="brand-mark">08</span>
+      <span class="brand-text"><b>Els cinc regnes</b><small>← Tornar al tema</small></span>
+    </a>
+    <span class="spacer"></span>
+    <button class="btn theme-toggle" type="button" aria-label="Canvia el tema"></button>
+  </div>
+</header>
+<main class="wrap" id="main" tabindex="-1">
+  <div class="view-head"><h1>La cèl·lula en 3D</h1><p>Gira-la, talla-la per la meitat i toca cada orgànul per saber què fa.</p></div>
+  <div class="c3d-tools">
+    <div class="seg" id="tipus" role="group" aria-label="Tipus de cèl·lula">
+      <button type="button" data-type="animal" aria-pressed="true">Animal</button><button type="button" data-type="vegetal" aria-pressed="false">Vegetal</button>
+    </div>
+    <label class="c3d-tall"><span>Talla</span><input type="range" id="tall" min="0" max="100" value="0"></label>
+    <button class="btn" id="gira" type="button" aria-pressed="true">Gira sola</button>
+    <button class="btn" id="centra" type="button">Centra</button>
+  </div>
+  <div class="c3d-layout">
+    <div class="c3d-stage" id="stage">
+      <canvas id="c3d" role="img" aria-label="Cèl·lula en 3D. Tria els orgànuls a la llista."></canvas>
+      <p class="hint3d" id="hint">Arrossega per girar · pessiga per apropar-te · toca un orgànul</p>
+    </div>
+    <aside class="c3d-side">
+      <div class="card c3d-info" id="info" aria-live="polite"></div>
+      <div class="c3d-parts" id="parts" role="group" aria-label="Orgànuls"></div>
+    </aside>
+  </div>
+</main>
+<script src="../tema-08/dades.js"></script>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+<script type="module" src="cellula-3d.js"></script>
+</body>
+</html>
