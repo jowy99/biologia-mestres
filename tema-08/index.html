@@ -41,13 +41,13 @@
   <section class="view" id="v-teoria">
     <div class="teoria-search">
       <label class="sr-only" for="t-search">Busca a la teoria</label>
-      <input class="search" id="t-search" type="search" placeholder="Busca a la teoria (p. ex. «quitina», «xilema»)…" autocomplete="off">
+      <input class="search" id="t-search" type="search" placeholder="Busca a la teoria…" autocomplete="off">
       <div id="t-results" class="t-results" aria-live="polite"></div>
     </div>
     <div class="teoria">
       <nav class="card toc" id="toc" aria-label="Capítols"></nav>
       <div>
-        <select class="toc-select" id="toc-select" aria-label="Capítol"></select>
+        <select class="select toc-select" id="toc-select" aria-label="Capítol"></select>
         <div id="chapter"></div>
       </div>
     </div>
@@ -94,7 +94,7 @@
     <div class="cmp-selector">
       <label class="cmp-label" for="cmp-a">Compara</label>
       <div class="cmp-row">
-        <select id="cmp-a" aria-label="Regne A">
+        <select class="select" id="cmp-a" aria-label="Regne A">
           <option value="1">Moneres</option>
           <option value="2">Protoctists</option>
           <option value="3">Fongs</option>
@@ -102,7 +102,7 @@
           <option value="5" selected>Animals</option>
         </select>
         <span class="cmp-and">amb</span>
-        <select id="cmp-b" aria-label="Regne B">
+        <select class="select" id="cmp-b" aria-label="Regne B">
           <option value="1" selected>Moneres</option>
           <option value="2">Protoctists</option>
           <option value="3">Fongs</option>

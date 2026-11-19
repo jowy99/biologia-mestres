@@ -906,17 +906,17 @@
   function initTargetes() {
     const chs = [...new Set(GLOSS.map(g => g.main).filter(x => x != null))].sort((a, b) => a - b);
     $('#fc-controls').innerHTML = `
-      <div class="ctl-row">
-        <div class="ctl-group">
-          <label class="ctl-label" for="fc-ch">Capítol</label>
-          <select class="control" id="fc-ch"><option value="tots">Tots (${GLOSS.length})</option>${chs.map(c => `<option value="${c}">${c}. ${D.capitols[c].curt} (${GLOSS.filter(g => g.main === c).length})</option>`).join('')}</select>
-        </div>
-        <div class="ctl-group">
-          <div class="ctl-switch-wrap">
-            <label class="switch"><input type="checkbox" id="fc-pend"><span class="switch-track"></span><span class="switch-text">Només pendents</span></label>
-            <label class="switch"><input type="checkbox" id="fc-rev"><span class="switch-track"></span><span class="switch-text">Mostra primer la definició</span></label>
+      <div class="card setup">
+        <div class="setup-field">
+          <label class="setup-label" for="fc-ch">Capítol</label>
+          <div class="setup-inline">
+            <select class="select" id="fc-ch"><option value="tots">Tots els capítols (${GLOSS.length})</option>${chs.map(c => `<option value="${c}">${c}. ${D.capitols[c].curt} (${GLOSS.filter(g => g.main === c).length})</option>`).join('')}</select>
+            <button class="btn" id="fc-shuf" type="button" aria-label="Barreja les targetes">${ICON('shuffle')}<span class="btn-txt">Barreja</span></button>
           </div>
-          <button class="control" id="fc-shuf" type="button">${ICON('shuffle')} Barreja</button>
+        </div>
+        <div class="setup-row">
+          <label class="switch"><input type="checkbox" id="fc-pend"><span class="switch-track"></span><span class="switch-text">Només pendents</span></label>
+          <label class="switch"><input type="checkbox" id="fc-rev"><span class="switch-track"></span><span class="switch-text">Definició primer</span></label>
         </div>
       </div>`;
     $('#fc-ch').addEventListener('change', e => { fcCh = e.target.value; buildDeck(); });
@@ -1038,28 +1038,45 @@
     const opt = { mode: 'mc', ch: 'tots', n: 10 };
     $('#quiz').innerHTML = `<div class="view-head"><h1>Posa't a prova</h1><p>Cada resposta s'explica amb el manual i et porta a la secció de teoria.</p></div>
       ${reviewBox()}
-      <div class="card quiz-setup">
-        <div class="field"><span class="lbl">Tipus</span><div class="chips" data-f="mode">
-          <button class="chip" type="button" data-v="mc" aria-pressed="true">Pregunta tipus test (${D.preguntes.length})</button>
-          <button class="chip" type="button" data-v="tf" aria-pressed="false">Vertader o fals: mites (${D.mites.length})</button></div></div>
-        <div class="field"><span class="lbl">Capítol</span><div class="chips" data-f="ch">
-          <button class="chip" type="button" data-v="tots" aria-pressed="true">Tots</button>
-          ${chs.map(c => `<button class="chip" type="button" data-v="${c}" aria-pressed="false">${c}. ${D.capitols[c].curt}</button>`).join('')}</div></div>
-        <div class="field"><span class="lbl">Nombre de preguntes</span><div class="chips" data-f="n">
-          <button class="chip" type="button" data-v="10" aria-pressed="true">10</button>
-          <button class="chip" type="button" data-v="20" aria-pressed="false">20</button>
-          <button class="chip" type="button" data-v="999" aria-pressed="false">Totes</button></div></div>
-        <p class="muted" id="q-best"></p>
-        <button class="btn primary" id="q-go" type="button">Comença →</button>
+      <div class="card setup quiz-setup">
+        <div class="setup-field">
+          <span class="setup-label" id="lbl-mode">Què vols practicar?</span>
+          <div class="opt-cards" data-f="mode" role="group" aria-labelledby="lbl-mode">
+            <button class="opt-card" type="button" data-v="mc" aria-pressed="true"><b>Preguntes tipus test</b><span>${D.preguntes.length} preguntes amb quatre opcions</span></button>
+            <button class="opt-card" type="button" data-v="tf" aria-pressed="false"><b>Vertader o fals</b><span>${D.mites.length} mites per desmuntar</span></button>
+          </div>
+        </div>
+        <div class="setup-row">
+          <div class="setup-field grow">
+            <label class="setup-label" for="q-ch">Capítol</label>
+            <select class="select" id="q-ch"><option value="tots">Tots els capítols</option>${chs.map(c => `<option value="${c}">${c}. ${D.capitols[c].curt}</option>`).join('')}</select>
+          </div>
+          <div class="setup-field">
+            <span class="setup-label" id="lbl-n">Preguntes</span>
+            <div class="seg" data-f="n" role="group" aria-labelledby="lbl-n">
+              <button type="button" data-v="10" aria-pressed="true">10</button><button type="button" data-v="20" aria-pressed="false">20</button><button type="button" data-v="999" aria-pressed="false">Totes</button>
+            </div>
+          </div>
+        </div>
+        <p class="muted setup-hint" id="q-best"></p>
+        <div class="setup-actions"><button class="btn primary" id="q-go" type="button">Comença →</button></div>
       </div>`;
-    const showBest = () => { const b = best[opt.mode + ':' + opt.ch]; $('#q-best').textContent = b != null ? `La teva millor puntuació aquí: ${b}%` : ''; };
-    $$('#quiz .chips').forEach(box => box.addEventListener('click', e => {
-      const b = e.target.closest('.chip'); if (!b) return;
-      $$('.chip', box).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    // Actualitza el rècord i el text del botó (quantes preguntes sortiran de veritat)
+    const refresh = () => {
+      const b = best[opt.mode + ':' + opt.ch];
+      $('#q-best').textContent = b != null ? `La teva millor puntuació aquí: ${b}%` : '';
+      const avail = SRC[opt.mode]().filter(q => opt.ch === 'tots' || q.c === +opt.ch).length;
+      const k = Math.min(opt.n, avail);
+      $('#q-go').textContent = `Comença · ${k} ${k === 1 ? 'pregunta' : 'preguntes'} →`;
+    };
+    $$('#quiz [data-f]').forEach(box => box.addEventListener('click', e => {
+      const b = e.target.closest('button[data-v]'); if (!b) return;
+      $$('button[data-v]', box).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
       opt[box.dataset.f] = box.dataset.f === 'n' ? +b.dataset.v : b.dataset.v;
-      showBest();
+      refresh();
     }));
-    showBest();
+    $('#q-ch').addEventListener('change', e => { opt.ch = e.target.value; refresh(); });
+    refresh();
     $('#q-go').addEventListener('click', () => {
       const pool = drawBag('q:' + opt.mode + ':' + opt.ch, SRC[opt.mode]().filter(q => opt.ch === 'tots' || q.c === +opt.ch), opt.n, q => q.q || q.t);
       if (!pool.length) { alert('No hi ha preguntes d\'aquest tipus per a aquest capítol.'); return; }
