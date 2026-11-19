@@ -171,16 +171,17 @@
   };
 
   // ================= NAVEGACIÓ =================
-  const VIEWS = ['teoria', 'repas', 'cellula', 'comparar', 'targetes', 'test', 'classifica', 'glossari', 'progres'];
+  const VIEWS = ['teoria', 'repas', 'cellula', 'comparar', 'targetes', 'test', 'classifica', 'clau', 'glossari', 'notes', 'progres'];
   const inited = {};
   let pendingQuiz = null; // test d'un capítol demanat des de la teoria
   function route() {
     const parts = (location.hash.slice(1) || 'teoria').split('/');
     const v = VIEWS.includes(parts[0]) ? parts[0] : 'teoria';
     stopSpeak();
+    $('#sel-bar').hidden = true;
     $$('.tab').forEach(t => t.dataset.view === v ? t.setAttribute('aria-current', 'page') : t.removeAttribute('aria-current'));
     // Si la vista activa està al menú «Més», marca també el botó
-    const MES = ['repas', 'comparar', 'classifica', 'glossari', 'progres'];
+    const MES = ['repas', 'comparar', 'classifica', 'clau', 'glossari', 'notes', 'progres'];
     const bn = $('.bn-more');
     if (bn) { MES.includes(v) ? bn.setAttribute('aria-current', 'page') : bn.removeAttribute('aria-current'); }
     document.title = (v === 'teoria' ? 'Teoria' : $(`.tab[data-view="${v}"]`).textContent.trim()) + ' · Els cinc regnes';
@@ -190,7 +191,7 @@
     if (v !== 'cellula' && inited.cellula) cellGameExit();
     // Sortir de la pestanya Test abandona el simulacre en curs
     if (v !== 'test' && EX) { clearInterval(EX.tick); EX = null; quizSetup(); }
-    if (!inited[v]) { inited[v] = true; INIT[v](); } else if (v === 'progres') renderProgres(); else if (v === 'repas') repasHome();
+    if (!inited[v]) { inited[v] = true; INIT[v](); } else if (v === 'progres') renderProgres(); else if (v === 'repas') repasHome(); else if (v === 'notes') renderNotes();
     // Si arriba hi ha pendingQuiz, saltem la configuració i comencem el quiz
     if (v === 'test' && pendingQuiz) {
       const opt = { mode: pendingQuiz.mode, ch: pendingQuiz.ch, n: 999 };
@@ -460,7 +461,7 @@
         ${prev ? `<a class="btn" href="#teoria/${prev.num}">← ${prev.num}. ${(D.capitols[prev.num] || {}).curt}</a>` : '<span></span>'}
         ${next ? `<a class="btn primary" href="#teoria/${next.num}">${next.num}. ${(D.capitols[next.num] || {}).curt} →</a>` : ''}
       </nav>`;
-    if (!isRef) markGlossary(box);
+    if (!isRef) { markGlossary(box); applyMarks(box); }
 
     const target = secId && document.getElementById(secId);
     if (target) {
@@ -1417,6 +1418,198 @@
     $('#rp-home').addEventListener('click', repasHome);
   }
 
+  // ================= CLAU DICOTÒMICA =================
+  // Classificar organismes responent sí o no (regnes dels apunts) i, al final, la visió actual
+  const CLAU = {
+    cel: { q: 'Està format per cèl·lules?', ans: k => k !== 0, yes: 'nucli', no: 0, why: ['No té cèl·lules ni metabolisme propi: no és de cap regne.', 'Té organització cel·lular.'] },
+    nucli: { q: 'Les seves cèl·lules tenen nucli?', ans: k => k >= 2, yes: 'fong', no: 1, why: ['És procariota: l\'ADN no està tancat dins d\'un nucli.', 'És eucariota: l\'ADN és dins d\'un nucli.'] },
+    fong: { q: 'S\'alimenta per absorció i té paret de quitina?', ans: k => k === 3, yes: 3, no: 'embrio', why: ['No combina la nutrició per absorció amb una paret de quitina.', 'Digereix l\'aliment fora del cos, n\'absorbeix els nutrients i la paret és de quitina.'] },
+    embrio: { q: 'És pluricel·lular i es desenvolupa a partir d\'un embrió?', ans: k => k === 4 || k === 5, yes: 'foto', no: 2, why: ['No forma embrions: és unicel·lular o un pluricel·lular senzill, com les algues.', 'És pluricel·lular i passa per una fase d\'embrió.'] },
+    foto: { q: 'Fa la fotosíntesi i té paret de cel·lulosa?', ans: k => k === 4, yes: 4, no: 5, why: ['És heteròtrof per ingestió i les seves cèl·lules no tenen paret.', 'Fa la fotosíntesi amb cloroplasts propis i té paret de cel·lulosa.'] }
+  };
+  const CLAU_K = { 0: 'Cap regne: no és cel·lular', 1: 'Regne Moneres', 2: 'Regne Protoctists', 3: 'Regne Fongs', 4: 'Regne Plantes', 5: 'Regne Animals' };
+  const CLAU_NOW = {
+    0: 'Els virus queden fora dels regnes perquè no són éssers cel·lulars.',
+    1: 'Avui, bacteris i arqueus són dos dominis diferents (Bacteria i Archaea).',
+    2: 'Avui no es considera un grup natural: aquests organismes es reparteixen per moltes branques dels eucariotes.',
+    3: 'Avui també es considera un grup natural, més emparentat amb els animals que amb les plantes.',
+    4: 'Avui es parla de plantes terrestres, dins del gran grup Archaeplastida.',
+    5: 'Avui també és un grup natural: els metazous.'
+  };
+  const CL_N = 8;
+  let CL = null;
+  function initClau() {
+    $('#v-clau').addEventListener('click', e => {
+      const b = e.target.closest('[data-a]');
+      if (b) { clauAnswer(b); return; }
+      if (e.target.closest('#clau-next')) { CL.i++; CL.i < CL.list.length ? clauOrg() : clauEnd(); window.scrollTo(0, 0); }
+      else if (e.target.closest('#clau-again')) newClauRound();
+    });
+    newClauRound();
+  }
+  function newClauRound() { CL = { list: drawBag('clau', D.organismes, CL_N, o => o.n), i: 0, clean: 0 }; clauOrg(); }
+  function clauOrg() { Object.assign(CL, { step: 'cel', path: [], miss: 0 }); clauRender(); }
+  const clauHead = () => `<div class="view-head"><h1>Clau dicotòmica</h1><p>Classifica cada organisme responent sí o no, com en una clau de camp.</p></div>
+    <div class="q-meta clau-meta"><span>Organisme ${CL.i + 1} de ${CL.list.length}</span><span>Sense errors: ${CL.clean}</span></div>`;
+  const clauOrgCard = (o, clue) => `<div class="card clau-org"><p class="rp-kicker">Organisme</p><h2>${esc(o.n)}</h2>${o.sci && o.sci !== '—' ? `<p class="sci">${esc(o.sci)}</p>` : ''}${clue ? `<p class="clue">${ICON('bulb')} ${esc(o.p)}</p>` : ''}</div>`;
+  const clauPath = () => CL.path.length ? `<ol class="clau-path">${CL.path.map(p => `<li><span>${p.q}</span><b>${p.a ? 'Sí' : 'No'}</b><small>${p.why}</small></li>`).join('')}</ol>` : '';
+  function clauRender() {
+    const o = CL.list[CL.i], st = CLAU[CL.step];
+    $('#v-clau').innerHTML = `${clauHead()}${clauOrgCard(o, true)}${clauPath()}
+      <div class="card clau-q"><p class="rp-kicker">Pregunta ${CL.path.length + 1}</p><h3>${st.q}</h3>
+        <div class="clau-btns"><button class="btn" type="button" data-a="1">Sí</button><button class="btn" type="button" data-a="0">No</button></div>
+        <div id="clau-fb" aria-live="polite"></div></div>`;
+  }
+  function clauAnswer(b) {
+    const o = CL.list[CL.i], st = CLAU[CL.step], a = b.dataset.a === '1';
+    if (st.ans(o.k) !== a) {
+      CL.miss++; b.disabled = true; b.classList.add('wrong');
+      $('#clau-fb').innerHTML = `<div class="explain"><b class="bad">No ben bé.</b> ${st.why[+!a]}</div>`;
+      return;
+    }
+    CL.path.push({ q: st.q, a, why: st.why[+a] });
+    const next = a ? st.yes : st.no;
+    if (typeof next === 'string') { CL.step = next; clauRender(); return; }
+    if (!CL.miss) CL.clean++;
+    const last = CL.i === CL.list.length - 1;
+    $('#v-clau').innerHTML = `${clauHead()}${clauOrgCard(o, false)}${clauPath()}
+      <div class="card clau-res" style="--kc:var(--k${o.k})"><p class="rp-kicker">Resultat${CL.miss ? '' : ' · sense errors'}</p><h3>${CLAU_K[o.k]}</h3>
+        <p>${esc(o.e)}</p><p class="clau-now"><b>Visió actual:</b> ${CLAU_NOW[o.k]}</p><p>${secLink(o.s)}</p>
+        <div class="score-actions"><button class="btn primary" id="clau-next" type="button">${last ? 'Veure el resultat' : 'Següent organisme →'}</button></div></div>`;
+    $('#clau-next').focus();
+  }
+  function clauEnd() {
+    const best = get('best', {}), rec = CL.clean > 0 && (best.clau == null || CL.clean > best.clau);
+    if (rec) { best.clau = CL.clean; set('best', best); }
+    $('#v-clau').innerHTML = `<div class="view-head"><h1>Clau dicotòmica</h1><p>Classifica cada organisme responent sí o no, com en una clau de camp.</p></div>
+      <div class="card score"><div class="big">${CL.clean}/${CL.list.length}</div><p>Organismes classificats <b>sense cap error</b>${rec ? ' · Nou rècord!' : ''}</p>
+      <div class="score-actions"><button class="btn primary" id="clau-again" type="button">Una altra ronda</button></div></div>`;
+  }
+
+  // ================= SUBRATLLATS I NOTES =================
+  // Es desen a 'notes' com { s: id de l'apartat, q: text subratllat, n: nota, t: identificador (data) }
+  const getNotes = () => { const n = get('notes', []); return Array.isArray(n) ? n : []; };
+  // Marca el text dins de l'apartat encara que travessi negretes o termes del glossari
+  function wrapQuote(root, quote, id, hasNote) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), map = [];
+    let flat = '';
+    while (walker.nextNode()) {
+      const n = walker.currentNode;
+      for (let i = 0; i < n.data.length; i++) {
+        const ch = /\s/.test(n.data[i]) ? ' ' : n.data[i];
+        if (ch === ' ' && flat.endsWith(' ')) continue;
+        flat += ch; map.push([n, i]);
+      }
+    }
+    const at = flat.indexOf(quote);
+    if (at < 0) return false;
+    const segs = new Map();
+    for (let i = at; i < at + quote.length; i++) { const [n, o] = map[i]; const s = segs.get(n); if (s) s[1] = o; else segs.set(n, [o, o]); }
+    let lastMark = null;
+    for (const [n, [a, b]] of segs) {
+      if (!n.data.slice(a, b + 1).trim()) continue;
+      const r = document.createRange(); r.setStart(n, a); r.setEnd(n, b + 1);
+      const m = document.createElement('mark');
+      m.className = 'hl' + (hasNote ? ' has-note' : ''); m.dataset.note = id;
+      r.surroundContents(m); lastMark = m;
+    }
+    if (lastMark) lastMark.classList.add('end');
+    return !!lastMark;
+  }
+  function applyMarks(box) {
+    getNotes().forEach(x => {
+      if (!/^s\d+-\d+$/.test(x.s)) return;
+      const p = box.querySelector('#' + x.s + ' .prose');
+      if (p) wrapQuote(p, x.q, x.t, !!x.n);
+    });
+  }
+  function refreshMarks() {
+    if (!$('#v-teoria').hidden) {
+      $$('#chapter mark.hl').forEach(m => m.replaceWith(...m.childNodes));
+      $$('#chapter .prose').forEach(p => p.normalize());
+      applyMarks($('#chapter'));
+    }
+    if (!$('#v-notes').hidden) renderNotes();
+  }
+  // Selecció de text a la teoria → barra «Subratlla / Afegeix una nota»
+  let lastSel = null, hideSel = null;
+  function readSel() {
+    const s = getSelection();
+    if (!s || s.isCollapsed || !s.rangeCount || $('#v-teoria').hidden) return null;
+    const r = s.getRangeAt(0), el = n => n.nodeType === 1 ? n : n.parentElement;
+    const pa = el(r.startContainer)?.closest('#chapter .sec .prose'), pb = el(r.endContainer)?.closest('#chapter .sec .prose');
+    const q = s.toString().replace(/\s+/g, ' ').trim();
+    return pa && pa === pb && q.length >= 3 && q.length <= 400 ? { s: pa.closest('.sec').id, q } : null;
+  }
+  document.addEventListener('selectionchange', () => {
+    const cur = readSel();
+    clearTimeout(hideSel);
+    if (cur) { lastSel = cur; $('#sel-bar').hidden = false; }
+    else hideSel = setTimeout(() => { lastSel = null; $('#sel-bar').hidden = true; }, 600);
+  });
+  // Evita que tocar la barra esborri la selecció abans del clic
+  $('#sel-bar').addEventListener('pointerdown', e => e.preventDefault());
+  function saveSel(withNote) {
+    if (!lastSel) return;
+    const notes = getNotes();
+    if (notes.length >= 500) { alert('Has arribat al màxim de 500 subratllats.'); return; }
+    const x = { s: lastSel.s, q: lastSel.q, n: '', t: Date.now() };
+    notes.push(x); set('notes', notes);
+    getSelection().removeAllRanges(); lastSel = null; $('#sel-bar').hidden = true;
+    const p = $('#' + x.s + ' .prose');
+    if (p) wrapQuote(p, x.q, x.t, false);
+    if (withNote) openNote(x.t);
+  }
+  $('#sel-hl').addEventListener('click', () => saveSel(false));
+  $('#sel-note').addEventListener('click', () => saveSel(true));
+  let noteT = null;
+  function openNote(t) {
+    const x = getNotes().find(n => n.t === t);
+    if (!x) return;
+    noteT = t;
+    $('#note-quote').textContent = '«' + x.q + '»';
+    $('#note-text').value = x.n;
+    $('#note-dlg').showModal();
+    $('#note-text').focus();
+  }
+  // El botó premut decideix què passa (Desa / Esborra / Cancel·la); Esc tanca sense canviar res
+  $('#note-dlg form').addEventListener('submit', e => {
+    const act = e.submitter && e.submitter.value, notes = getNotes(), i = notes.findIndex(n => n.t === noteT);
+    if (i < 0 || (act !== 'save' && act !== 'del')) return;
+    if (act === 'save') notes[i].n = $('#note-text').value.slice(0, 2000);
+    else notes.splice(i, 1);
+    set('notes', notes);
+    refreshMarks();
+  });
+  // Tocar un text subratllat obre la seva nota (excepte si és un terme del glossari)
+  $('#chapter').addEventListener('click', e => {
+    const m = e.target.closest('mark.hl');
+    if (m && !e.target.closest('.gl')) openNote(+m.dataset.note);
+  });
+  function initNotes() {
+    $('#v-notes').addEventListener('click', e => {
+      const ed = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+      if (ed) openNote(+ed.dataset.edit);
+      else if (del && confirm('Vols esborrar aquest subratllat i la seva nota?')) {
+        set('notes', getNotes().filter(n => n.t !== +del.dataset.del));
+        renderNotes();
+      }
+    });
+    renderNotes();
+  }
+  function renderNotes() {
+    const notes = getNotes().filter(x => /^s\d+-\d+$/.test(x.s)).sort((a, b) => a.s.localeCompare(b.s, undefined, { numeric: true }) || a.t - b.t);
+    const by = {};
+    notes.forEach(x => (by[x.s] ||= []).push(x));
+    $('#v-notes').innerHTML = `<div class="view-head"><h1>Les meves notes</h1><p>Els teus subratllats i notes de la teoria. Per afegir-ne, selecciona un text de la teoria.</p></div>` +
+      (notes.length ? Object.entries(by).map(([s, list]) => {
+        const num = s.slice(1).replace('-', '.'), sec = secById[num];
+        return `<div class="card note-group"><h2><a href="#teoria/${sec ? sec.c : num.split('.')[0]}/${s}">${num} ${sec ? inline(sec.s.title) : ''}</a></h2>
+          ${list.map(x => `<div class="note-item"><blockquote>${esc(x.q)}</blockquote>${x.n ? `<p>${esc(x.n)}</p>` : ''}
+            <div class="note-btns"><button class="btn small" type="button" data-edit="${x.t}">${ICON('pen')} ${x.n ? 'Edita la nota' : 'Afegeix una nota'}</button><button class="btn small" type="button" data-del="${x.t}">Esborra</button></div></div>`).join('')}</div>`;
+      }).join('') : '<p class="card empty">Encara no tens cap subratllat. A la teoria, selecciona un text i toca «Subratlla».</p>');
+  }
+
   // ================= PROGRÉS =================
   // Pestanya «Progrés»: tot el progrés del tema en un sol lloc (es repinta cada vegada que s'obre)
   function renderProgres() {
@@ -1500,6 +1693,6 @@
   // Després d'imprimir, buida el resum perquè no quedi amagat dins la pàgina
   window.addEventListener('afterprint', () => { const area = $('#print-area'); if (area) { area.innerHTML = ''; area.setAttribute('aria-hidden', 'true'); } });
 
-  const INIT = { teoria: initTeoria, cellula: initCellula, comparar: initComparar, targetes: initTargetes, test: initTest, classifica: initClassifica, glossari: initGlossari, progres: renderProgres, repas: repasHome };
+  const INIT = { teoria: initTeoria, cellula: initCellula, comparar: initComparar, targetes: initTargetes, test: initTest, classifica: initClassifica, glossari: initGlossari, progres: renderProgres, repas: repasHome, clau: initClau, notes: initNotes };
   route();
 })();
