@@ -1280,3 +1280,23 @@ h1, h2, h3 { text-wrap: balance; }
 .q-terms-t .i { width: 16px; height: 16px; flex: none; }
 .gl.gl-chip { min-height: 36px; padding: 4px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: .9rem; text-decoration: none; }
 .rp-def .q-terms { text-align: left; }
+
+/* ---------- Ratxa d'encerts, avís i navegació entre preguntes ---------- */
+.q-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0 0 10px; }
+.q-nav .btn:disabled { visibility: hidden; }
+.q-streak { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; padding: 0 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.q-streak .i { width: 14px; height: 14px; }
+.q-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 14px 0 0; }
+.q-actions .btn .i { width: 16px; height: 16px; }
+.q-actions > .btn { flex: 1 1 180px; justify-content: center; }
+.q-undo-note { margin: 10px 0 0; font-size: .85rem; }
+.rp-how { margin-top: 12px; padding: 12px 16px; }
+.rp-how summary { min-height: 32px; font-weight: 600; cursor: pointer; }
+.rp-how ul { display: grid; gap: 6px; margin: 8px 0 4px; padding-left: 1.2em; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 70; display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 32px); padding: 10px 18px; border-radius: 999px; background: var(--ink); color: var(--bg); box-shadow: 0 8px 24px rgb(0 0 0 / .2); opacity: 0; pointer-events: none; transform: translate(-50%, 16px); transition: opacity .2s, transform .2s; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast .i { flex: none; width: 18px; height: 18px; }
+.toast { width: max-content; }
+.nowrap { white-space: nowrap; }
+@media (max-width: 600px) { .toast { bottom: calc(92px + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }

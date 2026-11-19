@@ -25,8 +25,23 @@
   // ---------- Rànquing: punts per encert, rapidesa i ratxa ----------
   const GAME_NAMES = { 'test-mc': 'Test', 'test-tf': 'Vertader o fals', 'classifica': 'Classifica', 'cell-find': 'Troba la part', 'cell-name': 'Com es diu?', 'cell-which': 'Quina cèl·lula la té?' };
   const newRun = () => ({ pts: 0, streak: 0, t0: Date.now() });
-  function runHit(r) { const s = (Date.now() - r.t0) / 1000; r.streak++; r.pts += 100 + Math.max(0, Math.round(50 * (1 - s / 10))) + 10 * (r.streak - 1); }
+  function runHit(r) { const s = (Date.now() - r.t0) / 1000; r.streak++; r.pts += 100 + Math.max(0, Math.round(50 * (1 - s / 10))) + 10 * (r.streak - 1); hitStreak(r.streak); }
   function runMiss(r) { r.streak = 0; }
+  // Avís breu a la part de baix de la pantalla
+  let toastT = null;
+  function toast(html) {
+    let t = $('#toast');
+    if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    t.innerHTML = html; t.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600);
+  }
+  // Ratxa d'encerts seguits: avís a 3, 5, 10, 15… i rècord personal
+  function hitStreak(n) {
+    const best = Math.round(+get('hitBest', 0)) || 0;
+    if (n > best) set('hitBest', n);
+    if (n === 3 || n === 5 || (n >= 10 && n % 5 === 0)) toast(`${ICON('flame')} <b>${n} encerts seguits!</b>${n > best && best >= 3 ? ' Nou rècord' : ''}`);
+  }
+  const streakTag = n => n >= 2 ? `<span class="q-streak" title="Encerts seguits">${ICON('flame')} ${n}</span>` : '';
   // Medalla segons l'encert (%): or ≥ 90, plata ≥ 70, bronze ≥ 50
   function medalHTML(acc, tag) {
     const m = acc >= 90 ? ['Or', 'or'] : acc >= 70 ? ['Plata', 'plata'] : acc >= 50 ? ['Bronze', 'bronze'] : null;
@@ -188,7 +203,7 @@
       if (!g || seen.has(g.term)) return w;
       seen.add(g.term);
       return `<button type="button" class="gl" data-key="${k}" aria-haspopup="dialog">${w}</button>`;
-    });
+    }).replace(/(<button type="button" class="gl"[^>]*>[^<]*<\/button>)([?.,;:!»)…]+)/g, '<span class="nowrap">$1$2</span>'); // el signe no queda sol a la línia següent
   }
   // Xips amb les paraules de les respostes (dins d'un botó de resposta no hi pot haver un altre botó)
   function termChips(texts, except = '') {
@@ -1104,7 +1119,7 @@
     right ? s.delete(qKey(q)) : s.add(qKey(q));
     e[mode] = [...s]; set('errs', e);
   }
-  function startQuiz(opt, pool, review) { Q = { opt, pool, i: 0, ok: 0, wrong: [], review, run: newRun() }; askQ(); }
+  function startQuiz(opt, pool, review) { Q = { opt, pool, i: 0, ok: 0, wrong: [], review, run: newRun(), hist: [], snap: [], undo: false }; askQ(); }
   function reviewBox() {
     const n = { mc: errPool('mc').length, tf: errPool('tf').length };
     if (!n.mc && !n.tf) return '';
@@ -1177,36 +1192,70 @@
       startQuiz(opt, pool, false);
     });
   }
+  // Capçalera del test: barra de progrés, «Anterior» i «Surt»
+  const qHead = k => `<div class="qbar"><span style="width:${Q.i / Q.pool.length * 100}%"></span></div>
+      <div class="q-nav"><button class="btn small" id="q-back" type="button"${k ? '' : ' disabled'}>←&nbsp;Anterior</button><button class="btn small" id="q-quit" type="button">Surt del test</button></div>`;
+  function navQ(k) {
+    $('#q-quit').addEventListener('click', quizSetup);
+    if (k) $('#q-back').addEventListener('click', () => reviewQ(k - 1));
+  }
   function askQ() {
     const q = Q.pool[Q.i], mc = Q.opt.mode === 'mc';
     Q.run.t0 = Date.now();
-    const opts = mc ? shuffle(q.o.map((t, j) => ({ t, ok: j === 0 }))) : [{ t: 'Vertader', ok: q.v }, { t: 'Fals', ok: !q.v }];
-    $('#quiz').innerHTML = `<div class="qbar"><span style="width:${Q.i / Q.pool.length * 100}%"></span></div>
+    // Foto de l'estat d'abans de respondre: serveix per desfer la resposta
+    Q.snap[Q.i] = { ok: Q.ok, wrong: Q.wrong.length, errs: JSON.stringify(getErrs()), run: { ...Q.run } };
+    const opts = (Q.hist[Q.i] && Q.hist[Q.i].opts) || (mc ? shuffle(q.o.map((t, j) => ({ t, ok: j === 0 }))) : [{ t: 'Vertader', ok: q.v }, { t: 'Fals', ok: !q.v }]);
+    Q.hist[Q.i] = { opts, j: null };
+    $('#quiz').innerHTML = `${qHead(Q.i)}
       <div class="card q-card">
-        <div class="q-meta"><span>${Q.review ? 'Repàs d\'errors · ' : ''}Pregunta ${Q.i + 1} de ${Q.pool.length}</span><span>Encerts: ${Q.ok}</span></div>
+        <div class="q-meta"><span>${Q.review ? 'Repàs d\'errors · ' : ''}Pregunta ${Q.i + 1} de ${Q.pool.length}</span><span>Encerts: ${Q.ok}${streakTag(Q.run.streak)}</span></div>
         <div class="q-text">${mc ? glText(q.q) : '«' + glText(q.t) + '»'}</div>
         <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt" type="button" data-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
-        ${mc ? termChips(q.o, q.q) : ''}<div id="q-exp" aria-live="polite"></div>
-      </div>
-      <p style="text-align:center;margin-top:14px"><button class="btn small" id="q-quit" type="button">Surt del test</button></p>`;
-    $('#q-quit').addEventListener('click', quizSetup);
+        ${mc ? termChips(q.o, q.q) : ''}
+      </div>`;
+    navQ(Q.i);
     $$('#quiz .opt').forEach(b => b.addEventListener('click', () => {
       const j = +b.dataset.j, right = opts[j].ok;
-      $$('#quiz .opt').forEach((x, k) => { x.disabled = true; if (opts[k].ok) x.classList.add('right'); });
-      if (!right) { b.classList.add('wrong'); Q.wrong.push(q); runMiss(Q.run); } else { Q.ok++; runHit(Q.run); }
+      if (right) { Q.ok++; runHit(Q.run); } else { Q.wrong.push(q); runMiss(Q.run); }
       noteAnswer(Q.opt.mode, q, right);
-      const last = Q.i === Q.pool.length - 1;
-      const extra = Q.review && right ? ' <span class="muted">Surt de la llista d\'errors.</span>' : !right ? ' <span class="muted">S\'afegeix a la llista d\'errors per repassar-la.</span>' : '';
-      $('#q-exp').innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${glText(q.e)}<br>${secLink(q.s)}${extra}</div>
-        <p style="text-align:right;margin:14px 0 0"><button class="btn primary" id="q-next" type="button">${last ? 'Veure resultat' : 'Següent →'}</button></p>`;
-      $('#q-next').focus();
-      $('#q-next').addEventListener('click', () => { Q.i++; Q.i < Q.pool.length ? askQ() : endQ(); });
+      Object.assign(Q.hist[Q.i], { j, right });
+      reviewQ(Q.i);
+      $('#q-next').focus({ preventScroll: true });
     }));
+  }
+  // Pregunta ja resposta: la teva resposta, la correcta i l'explicació (també per tornar enrere)
+  function reviewQ(k) {
+    const q = Q.pool[k], mc = Q.opt.mode === 'mc', h = Q.hist[k], cur = k === Q.i, last = Q.i === Q.pool.length - 1;
+    const extra = Q.review && h.right ? ' <span class="muted">Surt de la llista d\'errors.</span>' : !h.right ? ' <span class="muted">S\'afegeix a la llista d\'errors per repassar-la.</span>' : '';
+    const fwd = cur ? `<button class="btn primary" id="q-next" type="button">${last ? 'Veure resultat' : 'Següent&nbsp;→'}</button>`
+      : `<button class="btn primary" id="q-fwd" type="button">${k + 1 === Q.i ? `Torna a la pregunta ${Q.i + 1}` : 'Endavant'}&nbsp;→</button>`;
+    $('#quiz').innerHTML = `${qHead(k)}
+      <div class="card q-card">
+        <div class="q-meta"><span>${Q.review ? 'Repàs d\'errors · ' : ''}Pregunta ${k + 1} de ${Q.pool.length}</span><span>Encerts: ${Q.ok}${streakTag(Q.run.streak)}</span></div>
+        <div class="q-text">${mc ? glText(q.q) : '«' + glText(q.t) + '»'}</div>
+        <div class="${mc ? 'opts' : 'tf'}">${h.opts.map((o, j) => `<button class="opt${o.ok ? ' right' : j === h.j ? ' wrong' : ''}" type="button" disabled>${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
+        ${mc ? termChips(q.o, q.q) : ''}
+        <div class="explain"><b class="${h.right ? 'ok' : 'bad'}">${h.right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${glText(q.e)}<br>${secLink(q.s)}${extra}</div>
+        <div class="q-actions"><button class="btn" id="q-undo" type="button">${ICON('reset')} Canvia la resposta</button>${fwd}</div>
+        ${cur ? '' : '<p class="muted q-undo-note">Si canvies aquesta resposta, hauràs de tornar a respondre les preguntes que vénen després.</p>'}
+      </div>`;
+    navQ(k);
+    $('#q-undo').addEventListener('click', () => undoQ(k));
+    if (cur) $('#q-next').addEventListener('click', () => { Q.i++; Q.i < Q.pool.length ? askQ() : endQ(); });
+    else $('#q-fwd').addEventListener('click', () => (k + 1 === Q.i && Q.hist[Q.i].j == null ? askQ() : reviewQ(k + 1)));
+  }
+  // Desfà la resposta k (i les que vénen després): torna a l'estat d'abans de respondre-la
+  function undoQ(k) {
+    const s = Q.snap[k];
+    Q.ok = s.ok; Q.wrong.length = s.wrong; Q.run = { ...s.run }; set('errs', JSON.parse(s.errs));
+    Q.hist.length = k + 1; Q.hist[k].j = null; Q.snap.length = k + 1;
+    Q.i = k; Q.undo = true;
+    askQ();
   }
   function endQ() {
     const pct = Math.round(Q.ok / Q.pool.length * 100);
     let rec = false;
-    if (!Q.review) {
+    if (!Q.review && !Q.undo) {
       const best = get('best', {}), key = Q.opt.mode + ':' + Q.opt.ch;
       rec = best[key] == null || pct > best[key];
       if (rec) { best[key] = pct; set('best', best); }
@@ -1214,9 +1263,9 @@
     const left = errPool(Q.opt.mode).length;
     const msg = Q.review ? (left ? `Encara et queden ${left} per repassar.` : 'Has buidat la llista d\'errors!')
       : pct >= 90 ? 'Excel·lent!' : pct >= 70 ? 'Molt bé!' : pct >= 50 ? 'Aprovat, però repassa els errors.' : 'Toca repassar la teoria.';
-    $('#quiz').innerHTML = `<div class="card score"><div class="big">${pct}%</div><p><b>${Q.ok} de ${Q.pool.length}</b> encerts · ${msg}${rec ? ' · Nou rècord!' : ''}</p>
+    $('#quiz').innerHTML = `<div class="card score"><div class="big">${pct}%</div><p><b>${Q.ok} de ${Q.pool.length}</b> encerts · ${msg}${rec ? ' · Nou rècord!' : ''}${Q.undo ? '<br><span class="muted">Has canviat alguna resposta, així que aquest resultat no compta per al rècord.</span>' : ''}</p>
       ${Q.wrong.length ? `<div class="review"><h3>Repassa aquestes:</h3><ul>${Q.wrong.map(q => `<li><b>${esc(qKey(q))}</b><br>${esc(q.e)} ${secLink(q.s)}</li>`).join('')}</ul></div>` : ''}
-      ${Q.review ? '' : rankBlock('test-' + Q.opt.mode, Q.run, Q.ok, Q.pool.length)}
+      ${Q.review || Q.undo ? '' : rankBlock('test-' + Q.opt.mode, Q.run, Q.ok, Q.pool.length)}
       <div class="score-actions">
         ${left ? `<button class="btn primary" type="button" data-review="${Q.opt.mode}">Repassa els errors (${left})</button>` : ''}
         <button class="btn${left ? '' : ' primary'}" id="q-again" type="button">Un altre test</button>
@@ -1238,7 +1287,7 @@
   function startExam() {
     if (EX) clearInterval(EX.tick);
     const items = shuffle([...spread(D.preguntes, 15).map(q => ({ kind: 'mc', q })), ...spread(D.mites, 5).map(q => ({ kind: 'tf', q }))]);
-    EX = { items, i: 0, res: [], end: Date.now() + EXAM_MIN * 60000 };
+    EX = { items, i: 0, res: [], pick: [], end: Date.now() + EXAM_MIN * 60000 };
     EX.tick = setInterval(examClock, 1000);
     examQ();
   }
@@ -1250,23 +1299,29 @@
   }
   function examQ() {
     const it = EX.items[EX.i], q = it.q, mc = it.kind === 'mc', n = EX.items.length;
-    const opts = mc ? shuffle(q.o.map((t, j) => ({ t, ok: j === 0 }))) : [{ t: 'Vertader', ok: q.v }, { t: 'Fals', ok: !q.v }];
-    $('#quiz').innerHTML = `<div class="qbar"><span style="width:${EX.i / n * 100}%"></span></div>
+    // Si hi tornes amb «Anterior», es manté l'ordre de les opcions i la resposta que havies triat
+    const p = EX.pick[EX.i] || (EX.pick[EX.i] = { opts: mc ? shuffle(q.o.map((t, j) => ({ t, ok: j === 0 }))) : [{ t: 'Vertader', ok: q.v }, { t: 'Fals', ok: !q.v }], j: null });
+    const opts = p.opts, answered = p.j != null;
+    $('#quiz').innerHTML = `<div class="qbar"><span style="width:${EX.res.filter(Boolean).length / n * 100}%"></span></div>
+      <div class="q-nav"><button class="btn small" id="ex-back" type="button"${EX.i ? '' : ' disabled'}>←&nbsp;Anterior</button>${answered ? '<button class="btn small" id="ex-fwd" type="button">Endavant&nbsp;→</button>' : ''}</div>
       <div class="card q-card">
         <div class="q-meta"><span>Simulacre · Pregunta ${EX.i + 1} de ${n}</span><span class="ex-time">${ICON('timer')} <span id="ex-time"></span></span></div>
         <div class="q-text">${mc ? glText(q.q) : '«' + glText(q.t) + '»'}</div>
-        <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt" type="button" data-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
+        <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt${p.j === j ? ' picked' : ''}" type="button" data-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
+        ${answered ? '<p class="muted q-undo-note">Ja l\'havies resposta. Si vols, tria una altra opció.</p>' : ''}
         ${mc ? termChips(q.o, q.q) : ''}
       </div>
       <p style="text-align:center;margin-top:14px"><button class="btn small" id="ex-stop" type="button">Acaba l'examen ara</button></p>`;
     examClock();
     $('#ex-stop').addEventListener('click', () => { if (confirm('Vols acabar l\'examen? Les preguntes sense respondre compten com a errors.')) examEnd(); });
+    if (EX.i) $('#ex-back').addEventListener('click', () => { EX.i--; examQ(); });
+    if (answered) $('#ex-fwd').addEventListener('click', () => { EX.i++; EX.i < n ? examQ() : examEnd(); });
     $$('#quiz .opt').forEach(b => b.addEventListener('click', () => {
       if (!EX) return;
-      const right = opts[+b.dataset.j].ok;
-      $$('#quiz .opt').forEach(x => { x.disabled = true; });
-      b.classList.add('picked');
-      EX.res.push({ right });
+      const j = +b.dataset.j, right = opts[j].ok;
+      $$('#quiz .opt').forEach(x => { x.disabled = true; x.classList.toggle('picked', x === b); });
+      p.j = j;
+      EX.res[EX.i] = { right };
       noteAnswer(it.kind, q, right);
       setTimeout(() => { if (!EX) return; EX.i++; EX.i < EX.items.length ? examQ() : examEnd(); }, 250);
     }));
@@ -1407,7 +1462,15 @@
         <h2>${due ? `Tens ${due} ${due === 1 ? 'cosa' : 'coses'} per repassar` : 'Avui toca aprendre termes nous'}</h2>
         <p class="muted">${parts.join(' · ') || 'Ja ho domines tot. Torna demà!'}</p>
         ${parts.length ? `<button class="btn primary" id="rp-go" type="button">${doneToday ? 'Fes un altre repàs' : 'Comença el repàs'} →</button>` : ''}
-      </div>`;
+      </div>
+      <details class="card rp-how"><summary>Què inclou el repàs?</summary>
+        <ul>
+          <li><b>Preguntes que vas fallar</b> al test o als mites (fins a 6). Quan n'encertes una, surt de la llista.</li>
+          <li><b>Targetes per reforçar</b>: termes que encara no has encertat tres vegades seguides.</li>
+          <li><b>Termes nous</b> del glossari, fins a arribar a 12 elements.</li>
+          <li>Quan l'acabes, la <b>ratxa de dies</b> puja. Si passa un dia sense repàs, torna a començar.</li>
+        </ul>
+      </details>`;
     const go = $('#rp-go');
     if (go) go.addEventListener('click', startRepas);
   }
@@ -1415,18 +1478,23 @@
     const { qs, weak, fresh } = repasPlan();
     const q6 = shuffle(qs).slice(0, 6);
     const cards = [...weak, ...fresh].slice(0, 12 - q6.length).map(g => ({ kind: 'card', g }));
-    RP = { items: shuffle([...q6, ...cards]), i: 0, ok: 0 };
+    RP = { items: shuffle([...q6, ...cards]), i: 0, ok: 0, streak: 0, snap: [] };
     if (!RP.items.length) { repasHome(); return; }
     repasItem();
   }
   function repasItem() {
     const it = RP.items[RP.i], n = RP.items.length;
-    const head = `<div class="qbar"><span style="width:${RP.i / n * 100}%"></span></div><div class="q-meta"><span>Repàs d'avui · ${RP.i + 1} de ${n}</span><span>Encerts: ${RP.ok}</span></div>`;
+    // Foto de l'estat d'abans de respondre: «Anterior» i «Canvia la resposta» hi tornen
+    RP.snap[RP.i] = { ok: RP.ok, streak: RP.streak, errs: JSON.stringify(getErrs()), lvl: JSON.stringify(getLvl()), known: JSON.stringify(get('known', [])) };
+    const head = `<div class="qbar"><span style="width:${RP.i / n * 100}%"></span></div>
+      <div class="q-nav"><button class="btn small" id="rp-back" type="button"${RP.i ? '' : ' disabled'}>←&nbsp;Anterior</button><button class="btn small" id="rp-quit" type="button">Surt del repàs</button></div>
+      <div class="q-meta"><span>Repàs d'avui · ${RP.i + 1} de ${n}</span><span>Encerts: ${RP.ok}${streakTag(RP.streak)}</span></div>`;
     if (it.kind === 'card') {
       $('#v-repas').innerHTML = `${head}<div class="card q-card rp-card">
-        <p class="rp-kicker">Targeta</p><div class="rp-term">${esc(it.g.term)}</div>
+        <p class="rp-kicker">Targeta · ${it.g.term in getLvl() ? 'per reforçar' : 'terme nou'}</p><div class="rp-term">${esc(it.g.term)}</div>
         <div class="rp-def" id="rp-def" hidden>${inline(it.g.def)}${termChips([it.g.plain], it.g.term)}</div>
         <div class="rp-actions" id="rp-act"><button class="btn primary" id="rp-show" type="button">Mostra la definició</button></div></div>`;
+      repasNav();
       $('#rp-show').addEventListener('click', () => {
         $('#rp-def').hidden = false;
         $('#rp-act').innerHTML = `<button class="btn no" type="button" data-ok="0">${ICON('x')} Encara no</button><button class="btn yes" type="button" data-ok="1">${ICON('tick')} Ja ho sé</button>`;
@@ -1436,7 +1504,7 @@
         const b = e.target.closest('[data-ok]'); if (!b) return;
         const ok = b.dataset.ok === '1';
         rateTerm(it.g.term, ok);
-        if (ok) RP.ok++;
+        if (ok) { RP.ok++; RP.streak++; hitStreak(RP.streak); } else RP.streak = 0;
         repasNext();
       });
       return;
@@ -1448,16 +1516,31 @@
       <div class="q-text">${mc ? glText(q.q) : '«' + glText(q.t) + '»'}</div>
       <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt" type="button" data-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
       ${mc ? termChips(q.o, q.q) : ''}<div id="rp-exp" aria-live="polite"></div></div>`;
+    repasNav();
     $$('#v-repas .opt').forEach(b => b.addEventListener('click', () => {
       const j = +b.dataset.j, right = opts[j].ok;
       $$('#v-repas .opt').forEach((x, k) => { x.disabled = true; if (opts[k].ok) x.classList.add('right'); });
-      if (!right) b.classList.add('wrong'); else RP.ok++;
+      if (!right) { b.classList.add('wrong'); RP.streak = 0; } else { RP.ok++; RP.streak++; hitStreak(RP.streak); }
       noteAnswer(it.kind, q, right);
       $('#rp-exp').innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${glText(q.e)}<br>${secLink(q.s)}</div>
-        <p style="text-align:right;margin:14px 0 0"><button class="btn primary" id="rp-next" type="button">Següent →</button></p>`;
+        <div class="q-actions"><button class="btn" id="rp-undo" type="button">${ICON('reset')} Canvia la resposta</button><button class="btn primary" id="rp-next" type="button">Següent&nbsp;→</button></div>`;
       $('#rp-next').focus();
       $('#rp-next').addEventListener('click', repasNext);
+      $('#rp-undo').addEventListener('click', () => repasUndo(RP.i));
     }));
+  }
+  function repasNav() {
+    $('#rp-quit').addEventListener('click', repasHome);
+    if (RP.i) $('#rp-back').addEventListener('click', () => repasUndo(RP.i - 1));
+  }
+  // Torna a l'element k tal com estava abans de respondre'l (desfà també els que vénen després)
+  function repasUndo(k) {
+    const s = RP.snap[k];
+    RP.ok = s.ok; RP.streak = s.streak;
+    set('errs', JSON.parse(s.errs)); set('lvl', JSON.parse(s.lvl)); set('known', JSON.parse(s.known));
+    RP.i = k; RP.snap.length = k;
+    repasItem();
+    window.scrollTo(0, 0);
   }
   function repasNext() {
     RP.i++;
@@ -1707,7 +1790,7 @@
         '<div class="card stat"><b>' + pct(nDone, total) + '%</b><span>Teoria estudiada<br>' + nDone + ' de ' + total + ' apartats</span></div>' +
         '<div class="card stat"><b>' + known.size + '</b><span>Targetes que saps<br>de ' + GLOSS.length + ' termes</span></div>' +
         '<div class="card stat"><b>' + nErrs + '</b><span>Errors per repassar' + (nErrs ? '<br><a href="#test">Repassa\'ls →</a>' : '') + '</span></div>' +
-        '<div class="card stat"><b>' + (Math.round(+get('streak', 0)) || 0) + '</b><span>Millor ratxa<br>al joc Classifica</span></div>' +
+        '<div class="card stat"><b>' + Math.max(Math.round(+get('streak', 0)) || 0, Math.round(+get('hitBest', 0)) || 0) + '</b><span>Millor ratxa<br>d\'encerts seguits</span></div>' +
       '</div>' +
       weakHTML + '<h2 class="section-title">Per capítols</h2>' +
       '<div class="table-wrap"><table class="study-table prog-table"><thead><tr><th scope="col">Capítol</th><th scope="col">Teoria</th><th scope="col">Millor test</th><th scope="col">Millor mites</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
