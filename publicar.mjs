@@ -69,12 +69,12 @@ if (existsSync(assetsSrc)) {
   copiaRecursiva(assetsSrc, assetsDst, 'assets');
 }
 
-// Temas: solo index.html, app.js, dades.js, contingut.js
+// Temas: solo index.html, app.js, dades.js, contingut.js, essencial.js
 for (const dir of readdirSync(root).filter(d => /^tema-\d+$/.test(d))) {
   const temaSrc = join(root, dir);
   const temaDst = join(publicarDir, dir);
   mkdirSync(temaDst, { recursive: true });
-  for (const f of ['index.html', 'app.js', 'dades.js', 'contingut.js']) {
+  for (const f of ['index.html', 'app.js', 'dades.js', 'contingut.js', 'essencial.js']) {
     const src = join(temaSrc, f);
     if (existsSync(src)) {
       copyFileSync(src, join(temaDst, f));

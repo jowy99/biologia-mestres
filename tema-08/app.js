@@ -3,6 +3,7 @@
   'use strict';
   const D = window.DADES;
   const T = 't8:';
+  const ESS = window.ESSENCIAL || {};
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const get = (k, d) => store.get(T + k, d);
@@ -385,12 +386,21 @@
     document.addEventListener('click', e => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest('.gl')) hidePop(false); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') hidePop(true); });
   }
+  // Marcador fluorescent sobre les definicions i termes clau de cada apartat (només negretes del manual)
+  // Marcador fluorescent sobre les definicions i termes clau de cada apartat (només negretes del manual)
+  function markEssential(box) {
+    $$('.sec', box).forEach(sec => {
+      const e = ESS[sec.id]; if (!e || !e.marca.length) return;
+      const want = new Set(e.marca.map(t => norm(t)));
+      $$('.prose strong', sec).forEach(b => { if (want.has(norm(b.textContent.replace(/:\s*$/, '').trim()))) b.classList.add('ess'); });
+    });
+  }
   // Marca la primera aparició de cada terme del glossari a cada apartat
   function markGlossary(box) {
     $$('.sec', box).forEach(sec => {
       const seen = new Set(), nodes = [];
       const walker = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT, { acceptNode: n =>
-        n.parentElement.closest('a, button, code, th, td, h2, h3, h4, mark, .badge, .ref, .gl, .sec-head') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+        n.parentElement.closest('a, button, code, th, td, h2, h3, h4, mark, .badge, .ref, .gl, .sec-head, .sec-clau') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
       while (walker.nextNode()) nodes.push(walker.currentNode); // primer es recullen, després es modifiquen
       nodes.forEach(node => {
         const txt = node.textContent; let last = 0, frag = null;
@@ -471,13 +481,13 @@
       ${c.sections.map(s => `<section class="card sec${isRef ? ' ref-sec' : (done.has(s.id) ? ' done' : '')}" id="${s.id}">
         <div class="sec-head"><h2><span class="secnum">${s.num}</span> ${inline(s.title)}</h2>
         ${isRef ? '' : `<div class="sec-actions"><button class="chip listen" type="button" aria-pressed="false">${ICON('play')}<span class="t">Escolta</span></button><button class="done-toggle" type="button" data-id="${s.id}" aria-pressed="${done.has(s.id)}">${done.has(s.id) ? ICON('tick') + ' Ho tinc' : 'Ho tinc?'}</button></div>`}</div>
-        <div class="prose">${blocks(s.lines)}</div></section>`).join('')}
+        ${!isRef && ESS[s.id] ? `<div class="sec-clau"><p class="sec-clau-t">${ICON('key')} Clau</p><ul>${ESS[s.id].clau.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}<div class="prose">${blocks(s.lines)}</div></section>`).join('')}
       ${quizCard}
       <nav class="chapter-nav">
         ${prev ? `<a class="btn" href="#teoria/${prev.num}">← ${prev.num}. ${(D.capitols[prev.num] || {}).curt}</a>` : '<span></span>'}
         ${next ? `<a class="btn primary" href="#teoria/${next.num}">${next.num}. ${(D.capitols[next.num] || {}).curt} →</a>` : ''}
       </nav>`;
-    if (!isRef) { markGlossary(box); applyMarks(box); }
+    if (!isRef) { markEssential(box); markGlossary(box); applyMarks(box); }
 
     const target = secId && document.getElementById(secId);
     if (target) {
