@@ -1341,5 +1341,9 @@ h1, h2, h3 { text-wrap: balance; }
 .sec-chk-t .i, .chk-open .i { width: 16px; height: 16px; }
 .sec-chk .q-text { font-size: 1.05rem; }
 .chk-more { margin: 10px 0 0; text-align: right; }
-.qc-stats { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 4px 0 14px; padding: 0; list-style: none; color: var(--muted); font-size: .9rem; }
+.qc-stats { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 4px 0 14px; padding: 0; list-style: none; color: var(--ink); font-size: .9rem; }
 .qc-stats b { color: var(--ink); }
+
+/* ---------- Joc de la cèl·lula: com es confirma la resposta ---------- */
+.game-hint { flex-basis: 100%; margin: 0; color: var(--muted); font-size: .9rem; text-align: center; }
+#game-foot [data-check]:disabled, #game-foot .game-confirm:disabled { opacity: .6; cursor: not-allowed; }

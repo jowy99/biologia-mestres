@@ -826,7 +826,12 @@
       if (t.closest('[data-game-again]')) return startGame(GAME.type);
       if (t.closest('[data-game-retry]')) return startGame(GAME.type, shuffle(GAME.wrong));
       const o = t.closest('[data-opt]'); if (o) return answerName(o);
-      const c = t.closest('[data-cellopt]'); if (c && !GAME.locked) { c.setAttribute('aria-pressed', String(c.getAttribute('aria-pressed') !== 'true')); return; }
+      const c = t.closest('[data-cellopt]');
+      if (c && !GAME.locked) {
+        c.setAttribute('aria-pressed', String(c.getAttribute('aria-pressed') !== 'true'));
+        const chk = $('#game-foot [data-check]'); if (chk) chk.disabled = !$('#game-foot [data-cellopt][aria-pressed="true"]');
+        return;
+      }
       if (t.closest('[data-check]')) return answerWhich();
     });
   }
@@ -847,7 +852,7 @@
   function setCandidate(p) {
     if (!GAME || GAME.locked) return;
     $$('#cell-svg .part').forEach(g => g.classList.toggle('cand', g.dataset.p === p));
-    $('#game-foot').innerHTML = `<button class="btn primary game-confirm" type="button" data-confirm="${p}">${ICON('tick')} Comprova aquesta part</button>`;
+    $('#game-foot').innerHTML = `<p class="game-hint">Si és aquesta part, prem «Comprova». Si no, toca'n una altra.</p><button class="btn primary game-confirm" type="button" data-confirm="${p}">${ICON('tick')} Comprova aquesta part</button>`;
   }
 
   function gameList(type) {
@@ -880,7 +885,7 @@
     cleanGameMarks();
     if (GAME.type === 'find') {
       $('#game-bar').innerHTML = gameHead() + `<p class="game-q">On és: <b>${D.parts[k].nom}</b>?</p>`;
-      $('#game-foot').innerHTML = '';
+      $('#game-foot').innerHTML = matchMedia('(pointer: coarse)').matches ? `<p class="game-hint">Toca la part al dibuix i després prem «Comprova».</p><button class="btn primary game-confirm" type="button" disabled>${ICON('tick')} Comprova</button>` : '';
     } else if (GAME.type === 'name') {
       const part = $(`#cell-svg .part[data-p="${k}"]`); if (part) part.classList.add('sel');
       $('#cell-svg svg').classList.add('has-sel');
@@ -890,7 +895,7 @@
     } else {
       $('#game-bar').innerHTML = gameHead() + `<p class="game-q">En quines cèl·lules hi ha: <b>${D.parts[k].nom}</b>?</p><p class="game-sub">Marca totes les que corresponguin.</p>`;
       $('#game-foot').innerHTML = ['animal', 'vegetal', 'procariota'].map(c => `<button class="btn game-opt" type="button" data-cellopt="${c}" aria-pressed="false">${CELL_NAMES[c]}</button>`).join('') +
-        `<button class="btn primary" type="button" data-check>Comprova</button>`;
+        `<button class="btn primary" type="button" data-check disabled>Comprova</button>`;
     }
   }
   function showNext() {
