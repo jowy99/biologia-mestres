@@ -795,10 +795,9 @@ a.btn:not(:disabled):not([aria-disabled="true"]),
 }
 
 /* Tab: subratllat en lloc de vora/píndola */
-.tab:not(:disabled):not([aria-disabled="true"]):not([aria-pressed="true"]):hover {
-  border-bottom-color: var(--accent);
-  background: var(--surface-2);
-  color: var(--ink);
+@media (hover: hover) {
+  .tab:not(:disabled):not([aria-disabled="true"]):not([aria-current="page"]):hover,
+  .tab-more:not([aria-current="page"]):hover { background: var(--surface-2); color: var(--ink); }
 }
 .tab:not(:disabled):not([aria-disabled="true"]):active {
   transform: translateY(1px);
@@ -1180,3 +1179,33 @@ h1, h2, h3 { text-wrap: balance; }
 /* Títols dins de la teoria (h3): barra del color del capítol perquè no es confonguin amb els noms de les targetes */
 .prose h3 { display: flex; align-items: center; gap: 10px; font-size: 1.22rem; margin: 1.6em 0 .6em; }
 .prose h3::before { content: ""; flex: none; width: 5px; height: 1.1em; border-radius: 3px; background: var(--kc, var(--accent)); }
+
+/* ---------- Navegació: píndola suau per a la pestanya activa ---------- */
+.tabs { align-items: center; gap: 4px; padding: 6px 16px 10px; }
+.tab, .tab-more {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px;
+  border: 0; border-radius: 999px; background: none; color: var(--muted);
+  font: inherit; font-weight: 600; white-space: nowrap; cursor: pointer;
+}
+.tab[aria-current="page"], .tab-more[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+.tab-more .i { width: 18px; height: 18px; }
+.tabs-menu {
+  position: fixed; inset: auto; margin: 0; min-width: 230px; padding: 6px;
+  border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink);
+  box-shadow: 0 12px 32px rgb(0 0 0 / .16);
+}
+.tabs-menu:popover-open { display: grid; gap: 2px; }
+.tabs-menu .tab { justify-content: flex-start; width: 100%; border-radius: 12px; color: var(--ink); }
+.tabs-menu .tab[aria-current="page"] { color: var(--accent); }
+@media (max-width: 600px) {
+  .bottomnav { gap: 2px; padding: 6px 6px max(6px, env(safe-area-inset-bottom)); box-shadow: 0 -4px 18px rgb(0 0 0 / .07); }
+  .bottomnav .tab, .bottomnav .bn-more { height: auto; min-height: 56px; border-radius: 16px; font-weight: 600; }
+  .bottomnav .tab[aria-current="page"], .bottomnav .bn-more[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+  .bottomnav .bn-more[aria-expanded="true"] { background: var(--surface-2); color: var(--ink); }
+  .bottomnav .tab:focus-visible, .bottomnav .bn-more:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .bn-menu { bottom: calc(76px + env(safe-area-inset-bottom)); padding: 6px; border-radius: 16px; min-width: 220px; }
+  .bn-menu .tab { min-height: 44px; border-radius: 12px; font-size: .95rem; }
+  .bn-menu .tab[aria-current="page"] { background: var(--accent-soft); }
+  body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .sel-bar { bottom: calc(92px + env(safe-area-inset-bottom)); }
+}

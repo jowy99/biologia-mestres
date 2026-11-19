@@ -184,6 +184,9 @@
     const MES = ['repas', 'comparar', 'classifica', 'clau', 'glossari', 'notes', 'progres'];
     const bn = $('.bn-more');
     if (bn) { MES.includes(v) ? bn.setAttribute('aria-current', 'page') : bn.removeAttribute('aria-current'); }
+    // Igual per al «Més» de la barra de dalt (escriptori)
+    const tm = $('.tab-more');
+    if (tm) { ['comparar', 'clau', 'glossari', 'notes', 'progres'].includes(v) ? tm.setAttribute('aria-current', 'page') : tm.removeAttribute('aria-current'); }
     document.title = (v === 'teoria' ? 'Teoria' : $(`.tab[data-view="${v}"]`).textContent.trim()) + ' · Els cinc regnes';
     VIEWS.forEach(n => { $('#v-' + n).hidden = n !== v; });
     // Tanca el popover del glossari en canviar de vista
@@ -220,6 +223,19 @@
     location.hash = 'test';
   });
   window.addEventListener('hashchange', route);
+
+  // ================= MENÚ «Més» DE LA BARRA DE DALT =================
+  // És un popover (es tanca sol en tocar fora o amb Esc); es col·loca just sota el botó
+  const tabsMenu = $('#tabs-menu'), tabMore = $('.tab-more');
+  if (tabsMenu && tabMore) {
+    tabsMenu.addEventListener('beforetoggle', e => {
+      if (e.newState !== 'open') return;
+      const r = tabMore.getBoundingClientRect();
+      tabsMenu.style.top = (r.bottom + 6) + 'px';
+      tabsMenu.style.left = Math.max(8, Math.min(r.left, innerWidth - 238)) + 'px';
+    });
+    $$('.tab', tabsMenu).forEach(t => t.addEventListener('click', () => tabsMenu.hidePopover()));
+  }
 
   // ================= BOTTOM NAV «Més» =================
   const bnMore = $('.bn-more');
