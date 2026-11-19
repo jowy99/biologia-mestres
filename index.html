@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biologia per a mestres</title>
+<meta name="description" content="Web interactiva per estudiar biologia: doble grau d'Educació Infantil i Primària.">
+<meta name="theme-color" content="#5763b6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="preload" href="assets/fonts/figtree-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/comu.js"></script>
+<script src="assets/temes.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Salta al contingut</a>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <span class="brand-mark">Bi</span>
+      <span class="brand-text"><b>Biologia per a mestres</b><small>Doble grau d'Educació Infantil i Primària</small></span>
+    </a>
+    <span class="spacer"></span>
+    <button class="btn theme-toggle" type="button" aria-label="Canvia el tema"></button>
+  </div>
+</header>
+<main class="wrap" id="main" tabindex="-1">
+  <section class="hero">
+    <h1>Biologia per a mestres</h1>
+    <p>Tria un tema per estudiar-lo de manera interactiva: teoria amb progrés, cèl·lules per explorar, comparacions, targetes, tests i jocs.</p>
+  </section>
+  <section aria-labelledby="h-disp"><h2 class="sr-only" id="h-disp">Temes disponibles</h2><div id="actius"></div></section>
+  <section class="altres" aria-labelledby="h-altres"><h2 id="h-altres">Altres temes</h2><ul class="altres-list" id="altres"></ul></section>
+  <section class="backup" aria-labelledby="h-backup">
+    <h2 id="h-backup">El teu progrés</h2>
+    <p>El progrés es desa en aquest navegador. Fes-ne una còpia per no perdre'l si canvies de mòbil o esborres les dades.</p>
+    <div class="backup-actions">
+      <button class="btn" id="btn-export">Exporta el progrés</button>
+      <button class="btn" id="btn-import">Importa el progrés</button>
+      <input type="file" accept="application/json" id="import-file" hidden>
+    </div>
+    <p id="backup-msg" role="status" aria-live="polite"></p>
+  </section>
+</main>
+<footer class="foot"><div class="wrap">El progrés es desa només en aquest navegador.</div></footer>
+<script>
+  // Temes actius: targeta gran amb progrés i «Continua on ho vas deixar»
+  const actius = document.getElementById('actius'), altres = document.getElementById('altres');
+  for (const t of window.TEMES) {
+    const num = String(t.num).padStart(2, '0');
+    if (!t.actiu) {
+      altres.insertAdjacentHTML('beforeend', `<li><span class="mini-num">${num}</span><span><b>${t.titol}</b><small>${t.desc}</small></span></li>`);
+      continue;
+    }
+    const done = (store.get(t.clau + ':done', []) || []).filter(id => !id.startsWith('s8-')).length;
+    const total = store.get(t.clau + ':total', 0);
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const last = store.get(t.clau + ':lastCh', null);
+    const lastSec = store.get(t.clau + ':lastSec', null);
+    const secOk = last != null && lastSec && lastSec.startsWith('s' + last + '-');
+    const secTxt = secOk && /^s\d+-\d+$/.test(lastSec) ? ' (apartat ' + lastSec.slice(1).replace('-', '.') + ')' : '';
+    const started = last != null || done > 0;
+    actius.insertAdjacentHTML('beforeend', `<article class="card feature">
+      <div class="feature-num" aria-hidden="true">${num}</div>
+      <div class="feature-body">
+        <span class="tag on">Tema ${t.num} · Disponible</span>
+        <h2>${t.titol}</h2>
+        <p>${t.desc}</p>
+        <div class="feature-prog"><div class="progress" role="progressbar" aria-label="Teoria estudiada" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div>
+          <small>Teoria estudiada: <b>${pct}%</b>${total ? ` (${done} de ${total} apartats)` : ''}</small></div>
+        <div class="feature-actions">
+          ${started ? `<a class="btn primary" href="${t.url}#teoria">Continua on ho vas deixar${secTxt} →</a><a class="btn" href="${t.url}">Obre el tema</a>`
+                     : `<a class="btn primary" href="${t.url}#teoria/0">Comença a estudiar →</a>`}
+        </div>
+      </div>
+    </article>`);
+  }
+
+  /* ---------- Backup: exportar / importar progrés ---------- */
+  const btnExport = document.getElementById('btn-export');
+  const btnImport = document.getElementById('btn-import');
+  const importFile = document.getElementById('import-file');
+  const backupMsg = document.getElementById('backup-msg');
+
+  function flash(msg) {
+    backupMsg.textContent = msg;
+  }
+
+  btnExport.addEventListener('click', () => {
+    try {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('bio:')) {
+          data[k] = localStorage.getItem(k);
+        }
+      }
+      const obj = { app: 'biologia-mestres', version: 1, data };
+      const json = JSON.stringify(obj, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const fname = 'progres-biologia-' + now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + '.json';
+      a.href = url;
+      a.download = fname;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      flash('Còpia descarregada.');
+    } catch (e) {
+      flash('No s\'ha pogut exportar: ' + e.message);
+    }
+  });
+
+  btnImport.addEventListener('click', () => {
+    importFile.value = '';
+    importFile.click();
+  });
+
+  // Valida una còpia de progrés: només claus conegudes i cada valor amb el tipus que toca
+  function validProgress(d) {
+    if (!d || typeof d !== 'object' || Array.isArray(d)) return false;
+    const keys = Object.keys(d);
+    if (keys.length > 40) return false;
+    const isStrArr = (v, re) => Array.isArray(v) && v.length <= 500 && v.every(x => typeof x === 'string' && x.length <= 200 && (!re || re.test(x)));
+    const isNumObj = v => v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(n => typeof n === 'number' && isFinite(n));
+    const isNum = v => typeof v === 'number' && isFinite(v);
+    const rules = {
+      'theme': v => v === 'light' || v === 'dark',
+      'done': v => isStrArr(v, /^s\d+-\d+$/), 'total': isNum, 'lastCh': isNum,
+      'lastSec': v => v === null || (typeof v === 'string' && /^s\d+-\d+$/.test(v)),
+      'known': v => isStrArr(v), 'lvl': isNumObj, 'best': isNumObj, 'cellBest': isNumObj, 'streak': isNum,
+      'labels': v => typeof v === 'boolean',
+      'errs': v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).every(m => (m === 'mc' || m === 'tf') && isStrArr(v[m])),
+      'bag': v => v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(a => isStrArr(a)),
+      'rank': v => v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(a => Array.isArray(a) && a.length <= 20 && a.every(e => e && isNum(e.p) && isNum(e.ok) && isNum(e.n) && typeof e.d === 'string' && e.d.length <= 30 && typeof e.name === 'string' && e.name.length <= 30)),
+      'player': v => typeof v === 'string' && v.length <= 30,
+    };
+    return keys.every(k => {
+      const m = k.match(/^bio:(?:t\d+:)?([A-Za-z]+)$/);
+      if (!m || !rules[m[1]] || typeof d[k] !== 'string' || d[k].length > 50000) return false;
+      try { return rules[m[1]](JSON.parse(d[k])); } catch (e) { return false; }
+    });
+  }
+
+  importFile.addEventListener('change', () => {
+    const file = importFile.files && importFile.files[0];
+    if (!file) return;
+    if (file.size > 300000) { flash('Aquest fitxer és massa gran per ser una còpia de progrés.'); return; }
+    try {
+      const reader = new FileReader();
+      reader.onload = function (ev) {
+        try {
+          const obj = JSON.parse(ev.target.result);
+          if (obj.app !== 'biologia-mestres') {
+            flash('Aquest fitxer no és una còpia vàlida.');
+            return;
+          }
+          const d = obj.data;
+          if (!validProgress(d)) {
+            flash('Aquest fitxer no és una còpia vàlida.');
+            return;
+          }
+          if (confirm('Això substituirà el progrés actual. Continuar?')) {
+            for (const k of Object.keys(d)) {
+              try { localStorage.setItem(k, d[k]); } catch (e) { /* ignorar */ }
+            }
+            flash('Progrés importat. S\'actualitza la pàgina…');
+            setTimeout(() => location.reload(), 800);
+          } else {
+            flash('Importació cancel·lada.');
+          }
+        } catch (parseErr) {
+          flash('Aquest fitxer no és una còpia vàlida.');
+        }
+      };
+      reader.readAsText(file);
+    } catch (e) {
+      flash('No s\'ha pogut importar: ' + e.message);
+    }
+  });
+
+</script>
+</body>
+</html>

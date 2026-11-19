@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Els cinc regnes</title>
+<meta name="description" content="Tema 8: cèl·lules, classificació i els cinc regnes dels éssers vius.">
+<meta name="theme-color" content="#5763b6">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/fonts.css">
+<link rel="preload" href="../assets/fonts/figtree-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../assets/comu.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Salta al contingut</a>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="../" title="Tornar al menú de temes">
+      <span class="brand-mark">08</span>
+      <span class="brand-text"><b>Els cinc regnes</b><small>← Menú de temes</small></span>
+    </a>
+    <span class="spacer"></span>
+    <button class="btn theme-toggle" type="button" aria-label="Canvia el tema"></button>
+  </div>
+  <nav class="tabs" aria-label="Seccions del tema">
+    <button class="tab" type="button" data-view="teoria"><i data-i="book"></i> Teoria</button>
+    <button class="tab" type="button" data-view="cellula"><i data-i="microscope"></i> Cèl·lula</button>
+    <button class="tab" type="button" data-view="comparar"><i data-i="scale"></i> Comparar</button>
+    <button class="tab" type="button" data-view="targetes"><i data-i="cards"></i> Targetes</button>
+    <button class="tab" type="button" data-view="test"><i data-i="check"></i> Test</button>
+    <button class="tab" type="button" data-view="classifica"><i data-i="shapes"></i> Classifica</button>
+    <button class="tab" type="button" data-view="glossari"><i data-i="type"></i> Glossari</button>
+    <button class="tab" type="button" data-view="progres"><i data-i="trophy"></i> Progrés</button>
+  </nav>
+</header>
+
+<main class="wrap" id="main" tabindex="-1">
+  <!-- TEORIA -->
+  <section class="view" id="v-teoria">
+    <div class="teoria-search">
+      <label class="sr-only" for="t-search">Busca a la teoria</label>
+      <input class="search" id="t-search" type="search" placeholder="Busca a la teoria (p. ex. «quitina», «xilema»)…" autocomplete="off">
+      <div id="t-results" class="t-results" aria-live="polite"></div>
+    </div>
+    <div class="teoria">
+      <nav class="card toc" id="toc" aria-label="Capítols"></nav>
+      <div>
+        <select class="toc-select" id="toc-select" aria-label="Capítol"></select>
+        <div id="chapter"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CÈL·LULA -->
+  <section class="view" id="v-cellula" hidden>
+    <div class="view-head">
+      <h1>Explora la cèl·lula</h1>
+      <p>Toca qualsevol estructura per veure què és i per a què serveix. A sota tens tres jocs per posar-te a prova.</p>
+    </div>
+    <div class="cell-toolbar">
+      <div class="seg" id="cell-types" role="group" aria-label="Tipus de cèl·lula"></div>
+      <label class="switch"><input type="checkbox" id="labels-sw"><span class="switch-track" aria-hidden="true"></span><span class="switch-text">Mostra els noms</span></label>
+    </div>
+    <div class="cell-layout">
+      <div>
+        <div class="card cell-stage">
+          <div class="game-bar" id="game-bar" hidden></div>
+          <div class="sel-bar" id="sel-bar" aria-live="polite"><span class="sel-hint" id="sel-hint">Toca una part del dibuix per veure què és</span></div>
+          <div id="cell-svg"></div>
+          <div class="game-foot" id="game-foot" hidden></div>
+        </div>
+      </div>
+      <aside class="card info" id="cell-info" aria-live="polite"></aside>
+    </div>
+    <div class="card game-launch" id="game-launch">
+      <div><h2>Posa't a prova</h2><p>Tres jocs per practicar les parts de la cèl·lula.</p></div>
+      <div class="game-btns">
+        <button class="btn primary" type="button" data-game="find">Troba la part</button>
+        <button class="btn" type="button" data-game="name">Com es diu?</button>
+        <button class="btn" type="button" data-game="which">Quina cèl·lula la té?</button>
+      </div>
+    </div>
+    <div id="cell-extra"></div>
+  </section>
+
+  <!-- COMPARAR -->
+  <section class="view" id="v-comparar" hidden>
+    <div class="view-head">
+      <h1>Compara els regnes</h1>
+      <p>Tria dos regnes i compara'ls característica per característica. A sota tens totes les taules comparatives.</p>
+    </div>
+    <div class="cmp-selector">
+      <label class="cmp-label" for="cmp-a">Compara</label>
+      <div class="cmp-row">
+        <select id="cmp-a" aria-label="Regne A">
+          <option value="1">Moneres</option>
+          <option value="2">Protoctists</option>
+          <option value="3">Fongs</option>
+          <option value="4">Plantes</option>
+          <option value="5" selected>Animals</option>
+        </select>
+        <span class="cmp-and">amb</span>
+        <select id="cmp-b" aria-label="Regne B">
+          <option value="1" selected>Moneres</option>
+          <option value="2">Protoctists</option>
+          <option value="3">Fongs</option>
+          <option value="4">Plantes</option>
+          <option value="5">Animals</option>
+        </select>
+        <button class="icon-btn" type="button" id="cmp-swap" aria-label="Intercanvia els regnes">
+          <i data-i="swap"></i>
+        </button>
+      </div>
+    </div>
+    <div class="duel" id="duel"></div>
+    <div id="comp-tables"></div>
+  </section>
+
+  <!-- TARGETES -->
+  <section class="view" id="v-targetes" hidden>
+    <div class="fc-wrap">
+      <div class="view-head"><h1>Targetes de memòria</h1><p>Toca la targeta (o prem Espai) per girar-la i marca si ja ho saps. Amb el teclat: ← encara no, → ja ho sé.</p></div>
+      <div class="fc-controls" id="fc-controls"></div>
+      <button class="flashcard" id="flashcard" type="button">
+        <span class="fc-inner">
+          <span class="fc-face front" id="fc-face-front"><span id="fc-front"></span><span class="hint">Toca per girar · Espai</span></span>
+          <span class="fc-face back" id="fc-face-back" aria-hidden="true"><span id="fc-back"></span><span class="hint">Toca per tornar</span></span>
+        </span>
+      </button>
+      <div class="fc-actions">
+        <button class="btn no" id="fc-no" type="button"><i data-i="x"></i> Encara no</button>
+        <button class="btn yes" id="fc-yes" type="button"><i data-i="tick"></i> Ja ho sé</button>
+      </div>
+      <div class="fc-stats" id="fc-stats" aria-live="polite"></div>
+      <p class="fc-foot"><button class="btn-text" id="fc-reset" type="button"><i data-i="reset"></i> Esborra el progrés de les targetes</button></p>
+    </div>
+  </section>
+
+  <!-- TEST -->
+  <section class="view" id="v-test" hidden>
+    <div class="quiz" id="quiz"></div>
+  </section>
+
+  <!-- CLASSIFICA -->
+  <section class="view" id="v-classifica" hidden>
+    <div class="game">
+      <div class="view-head"><h1>A quin regne pertany?</h1><p>Classifica cada organisme segons el model dels cinc regnes dels apunts. Compte amb les trampes!</p></div>
+      <div class="streak" id="g-stats" aria-live="polite"></div>
+      <div class="card organism" id="g-card"></div>
+      <div class="kchoices" id="g-choices"></div>
+      <div id="g-fb" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- GLOSSARI -->
+  <section class="view" id="v-glossari" hidden>
+    <div class="view-head"><h1>Glossari</h1><p>Busca un terme. Els botons de colors t'obren el capítol on apareix.</p></div>
+    <div class="gloss-tools"><input class="search" id="g-search" type="search" placeholder="Busca un terme o una paraula…" aria-label="Busca al glossari"></div>
+    <div class="gloss" id="gloss"></div>
+  </section>
+
+  <!-- PROGRÉS -->
+  <section class="view" id="v-progres" hidden>
+    <div class="view-head"><h1>Progrés</h1><p>Resum del teu avenç en el tema.</p></div>
+    <div class="stats" id="progres-stats"></div>
+    <div class="table-wrap">
+      <table class="study-table" id="progres-table">
+        <thead><tr><th>Capítol</th><th>Seccions</th><th>Targetes</th><th>Test</th></tr></thead>
+        <tbody id="progres-tbody"></tbody>
+        <tfoot id="progres-tfoot"></tfoot>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="print-area" aria-hidden="true"></div>
+
+<footer class="foot"><div class="wrap">Contingut: <em>Els cinc regnes dels éssers vius — manual complet</em> (v1.0). El progrés es desa només en aquest navegador.</div></footer>
+
+<nav class="bottomnav" aria-label="Seccions (mòbil)">
+  <button class="tab" type="button" data-view="teoria"><i data-i="book"></i> Teoria</button>
+  <button class="tab" type="button" data-view="cellula"><i data-i="microscope"></i> Cèl·lula</button>
+  <button class="tab" type="button" data-view="test"><i data-i="check"></i> Test</button>
+  <button class="tab" type="button" data-view="targetes"><i data-i="cards"></i> Targetes</button>
+  <button class="bn-more" type="button" aria-expanded="false" aria-controls="bn-menu"><i data-i="shapes"></i> Més</button>
+</nav>
+<div class="bn-menu" id="bn-menu" hidden>
+  <button class="tab" type="button" data-view="comparar"><i data-i="scale"></i> Comparar</button>
+  <button class="tab" type="button" data-view="classifica"><i data-i="shapes"></i> Classifica</button>
+  <button class="tab" type="button" data-view="glossari"><i data-i="type"></i> Glossari</button>
+  <button class="tab" type="button" data-view="progres"><i data-i="trophy"></i> Progrés</button>
+</div>
+
+<script src="contingut.js" defer></script>
+<script src="dades.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

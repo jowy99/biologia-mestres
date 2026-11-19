@@ -1,0 +1,13 @@
+{
+  "name": "Biologia per a mestres",
+  "short_name": "Biologia",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fafafc",
+  "theme_color": "#5763b6",
+  "lang": "ca",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
