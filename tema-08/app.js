@@ -388,6 +388,7 @@
         b.innerHTML = on ? ICON('tick') + ' Ho tinc' : 'Ho tinc?';
         b.closest('.sec').classList.toggle('done', on);
         renderToc();
+        updChProg();
         return;
       }
       const r = e.target.closest('.repas');
@@ -504,13 +505,14 @@
     const quizCard = isQuizCh ? `<div class="card quiz-card">
       <h2>${ICON('check')} Posa't a prova</h2>
       <p>Comprova si has entès aquest capítol: preguntes tipus test i afirmacions de vertader o fals.</p>
+      <ul class="qc-stats"><li><span data-chprog></span></li><li>Millor test: <b>${bestCh('mc', c.num)}</b></li><li>Millor mites: <b>${bestCh('tf', c.num)}</b></li></ul>
       <div class="quiz-btns">
         ${mcN ? `<button class="btn primary" type="button" data-quiz="mc" data-ch="${c.num}">Test del capítol (${mcN})</button>` : ''}
         ${tfN ? `<button class="btn" type="button" data-quiz="tf" data-ch="${c.num}">Mites del capítol (${tfN})</button>` : ''}
       </div>
     </div>` : '';
     box.innerHTML = `
-      <header class="chapter-head"><div class="kicker">${isRef ? 'Referències' : 'Capítol ' + c.num}</div><h1>${isRef ? 'Fonts consultades' : inline(c.title)}</h1></header>
+      <header class="chapter-head"><div class="kicker">${isRef ? 'Referències' : 'Capítol ' + c.num}</div><h1>${isRef ? 'Fonts consultades' : inline(c.title)}</h1>${isRef ? '' : '<div class="ch-prog"><div class="qbar"><span></span></div><span data-chprog></span></div>'}</header>
       ${!isRef && D.idees[c.num] ? `<div class="card keyideas"><h2>${ICON('bulb')} Idees clau</h2><ul>${D.idees[c.num].map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
       ${!isRef ? `<div class="tools">
         <button class="chip repas" type="button" aria-pressed="false">${ICON('eyeoff')} Mode repàs de taules</button>
@@ -522,13 +524,13 @@
       ${c.sections.map(s => `<section class="card sec${isRef ? ' ref-sec' : (done.has(s.id) ? ' done' : '')}" id="${s.id}">
         <div class="sec-head"><h2><span class="secnum">${s.num}</span> ${inline(s.title)}</h2>
         ${isRef ? '' : `<div class="sec-actions"><button class="chip listen" type="button" aria-pressed="false">${ICON('play')}<span class="t">Escolta</span></button><button class="done-toggle" type="button" data-id="${s.id}" aria-pressed="${done.has(s.id)}">${done.has(s.id) ? ICON('tick') + ' Ho tinc' : 'Ho tinc?'}</button></div>`}</div>
-        ${!isRef && ESS[s.id] ? `<div class="sec-clau"><p class="sec-clau-t">${ICON('key')} Clau</p><ul>${ESS[s.id].clau.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}<div class="prose">${blocks(s.lines)}</div></section>`).join('')}
+        ${!isRef && ESS[s.id] ? `<div class="sec-clau"><p class="sec-clau-t">${ICON('key')} Clau</p><ul>${ESS[s.id].clau.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}<div class="prose">${blocks(s.lines)}</div>${!isRef && CHK[s.num] ? `<div class="sec-chk" data-chk="${s.num}"><button class="chip chk-open" type="button">${ICON('check')} Comprova-ho amb una pregunta</button></div>` : ''}</section>`).join('')}
       ${quizCard}
       <nav class="chapter-nav">
         ${prev ? `<a class="btn" href="#teoria/${prev.num}">← ${prev.num}. ${(D.capitols[prev.num] || {}).curt}</a>` : '<span></span>'}
         ${next ? `<a class="btn primary" href="#teoria/${next.num}">${next.num}. ${(D.capitols[next.num] || {}).curt} →</a>` : ''}
       </nav>`;
-    if (!isRef) { markEssential(box); markGlossary(box); applyMarks(box); }
+    if (!isRef) { markEssential(box); markGlossary(box); applyMarks(box); updChProg(); }
 
     const target = secId && document.getElementById(secId);
     if (target) {
@@ -542,6 +544,48 @@
     } else window.scrollTo(0, 0);
     if (!isRef) trackReading();
   }
+
+  // ================= PUNTS DE CONTROL A LA TEORIA =================
+  // Una pregunta ràpida al final de cada apartat; si l'encertes, l'apartat queda marcat com a après
+  const CHK = {};
+  [...D.preguntes.map(q => ({ kind: 'mc', q })), ...D.mites.map(q => ({ kind: 'tf', q }))].forEach(x => (CHK[x.q.s] ||= []).push(x));
+  const bestCh = (m, n) => { const b = get('best', {})[m + ':' + n]; return b != null ? b + '%' : 'encara cap'; };
+  // Progrés del capítol obert (capçalera i targeta «Posa't a prova»)
+  function updChProg() {
+    const secs = $$('#chapter .sec:not(.ref-sec)'); if (!secs.length) return;
+    const n = secs.filter(s => s.classList.contains('done')).length;
+    $$('#chapter [data-chprog]').forEach(el => { el.textContent = `${n} de ${secs.length} apartats après`; });
+    const bar = $('#chapter .ch-prog .qbar span'); if (bar) bar.style.width = (n / secs.length * 100) + '%';
+  }
+  function chkAsk(box) {
+    const list = CHK[box.dataset.chk], prev = box.dataset.last;
+    const pool = list.length > 1 ? list.filter(x => qKey(x.q) !== prev) : list;
+    const it = pool[Math.floor(Math.random() * pool.length)], q = it.q, mc = it.kind === 'mc';
+    box.dataset.last = qKey(q);
+    const opts = mc ? shuffle(q.o.map((t, j) => ({ t, ok: j === 0 }))) : [{ t: 'Vertader', ok: q.v }, { t: 'Fals', ok: !q.v }];
+    box._chk = { it, opts };
+    box.innerHTML = `<p class="sec-chk-t">${ICON('check')} Comprova-ho</p>
+      <div class="q-text">${mc ? glText(q.q) : '«' + glText(q.t) + '»'}</div>
+      <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt" type="button" data-chk-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
+      ${mc ? termChips(q.o, q.q) : ''}<div class="chk-fb" aria-live="polite"></div>`;
+  }
+  function chkAnswer(box, j) {
+    const { it, opts } = box._chk, q = it.q, right = opts[j].ok;
+    $$('.opt', box).forEach((x, k) => { x.disabled = true; if (opts[k].ok) x.classList.add('right'); else if (k === j) x.classList.add('wrong'); });
+    noteAnswer(it.kind, q, right);
+    const sec = box.closest('.sec'), tog = sec && $('.done-toggle', sec);
+    const mark = right && tog && tog.getAttribute('aria-pressed') !== 'true';
+    if (mark) tog.click();
+    const more = CHK[box.dataset.chk].length > 1;
+    $('.chk-fb', box).innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${glText(q.e)}${mark ? ' <b>Apartat marcat com a après.</b>' : ''}${right ? '' : ' Rellegeix l\'apartat i torna-ho a provar.'}</div>
+      <p class="chk-more"><button class="btn small" type="button" data-chk-again>${right && more ? 'Una altra pregunta' : 'Torna-ho a provar'}</button></p>`;
+  }
+  $('#chapter').addEventListener('click', e => {
+    const box = e.target.closest('.sec-chk'); if (!box) return;
+    const o = e.target.closest('[data-chk-j]');
+    if (o) { chkAnswer(box, +o.dataset.chkJ); return; }
+    if (e.target.closest('.chk-open, [data-chk-again]')) chkAsk(box);
+  });
 
   // ================= ESCOLTA (lectura en veu alta) =================
   // Només apareix si el dispositiu té una veu en català

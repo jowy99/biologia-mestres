@@ -1331,3 +1331,15 @@ h1, h2, h3 { text-wrap: balance; }
 .clau-res h3 .i { flex: none; width: 28px; height: 28px; color: var(--kc); }
 .clau-tools { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; }
 .clau-tools .btn .i { width: 16px; height: 16px; }
+
+/* ---------- Punts de control a la teoria ---------- */
+.ch-prog { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--muted); font-size: .88rem; }
+.ch-prog .qbar { flex: 1; max-width: 240px; margin: 0; }
+.ch-prog .qbar span { background: var(--kc, var(--accent)); }
+.sec-chk { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.sec-chk-t { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; color: var(--muted); font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.sec-chk-t .i, .chk-open .i { width: 16px; height: 16px; }
+.sec-chk .q-text { font-size: 1.05rem; }
+.chk-more { margin: 10px 0 0; text-align: right; }
+.qc-stats { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 4px 0 14px; padding: 0; list-style: none; color: var(--muted); font-size: .9rem; }
+.qc-stats b { color: var(--ink); }
