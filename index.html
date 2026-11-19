@@ -138,8 +138,11 @@
       'labels': v => typeof v === 'boolean',
       'errs': v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).every(m => (m === 'mc' || m === 'tf') && isStrArr(v[m])),
       'bag': v => v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(a => isStrArr(a)),
-      'rank': v => v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(a => Array.isArray(a) && a.length <= 20 && a.every(e => e && isNum(e.p) && isNum(e.ok) && isNum(e.n) && typeof e.d === 'string' && e.d.length <= 30 && typeof e.name === 'string' && e.name.length <= 30)),
+      'rank': v => v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(a => Array.isArray(a) && a.length <= 20 && a.every(e => e && isNum(e.p) && isNum(e.ok) && isNum(e.n) && typeof e.d === 'string' && e.d.length <= 30 && (e.name === undefined || (typeof e.name === 'string' && e.name.length <= 30)))),
       'player': v => typeof v === 'string' && v.length <= 30,
+      'cmp': v => Array.isArray(v) && v.length === 2 && v.every(n => Number.isInteger(n) && n >= 1 && n <= 5),
+      'daily': v => v && typeof v === 'object' && !Array.isArray(v) && typeof v.last === 'string' && v.last.length <= 10 && isNum(v.streak) && isNum(v.best),
+      'notes': v => Array.isArray(v) && v.length <= 500 && v.every(x => x && typeof x === 'object' && typeof x.s === 'string' && /^s\d+-\d+$/.test(x.s) && typeof x.q === 'string' && x.q.length <= 400 && typeof x.n === 'string' && x.n.length <= 2000 && isNum(x.t)),
     };
     return keys.every(k => {
       const m = k.match(/^bio:(?:t\d+:)?([A-Za-z]+)$/);

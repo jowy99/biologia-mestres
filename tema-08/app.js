@@ -177,6 +177,7 @@
   function route() {
     const parts = (location.hash.slice(1) || 'teoria').split('/');
     const v = VIEWS.includes(parts[0]) ? parts[0] : 'teoria';
+    stopSpeak();
     $$('.tab').forEach(t => t.dataset.view === v ? t.setAttribute('aria-current', 'page') : t.removeAttribute('aria-current'));
     // Si la vista activa està al menú «Més», marca també el botó
     const MES = ['comparar', 'classifica', 'glossari', 'progres'];
@@ -205,6 +206,12 @@
   }));
   // Delegació: botons «Posa't a prova» dins del capítol
   $('#chapter').addEventListener('click', e => {
+    const b = e.target.closest('[data-quiz]'); if (!b) return;
+    pendingQuiz = { mode: b.dataset.quiz, ch: +b.dataset.ch };
+    location.hash = 'test';
+  });
+  // Delegació: botons «Practica el test» dels punts febles (pestanya Progrés)
+  $('#v-progres').addEventListener('click', e => {
     const b = e.target.closest('[data-quiz]'); if (!b) return;
     pendingQuiz = { mode: b.dataset.quiz, ch: +b.dataset.ch };
     location.hash = 'test';
@@ -444,7 +451,7 @@
       ${isRef ? `<div class="prose"><p>Aquest capítol és un recurs de consulta. Les seccions següents recullen les fonts bibliogràfiques i recursos utilitzats al llarg del tema. No cal marcar-les com a estudiades.</p></div>` : ''}
       ${c.sections.map(s => `<section class="card sec${isRef ? ' ref-sec' : (done.has(s.id) ? ' done' : '')}" id="${s.id}">
         <div class="sec-head"><h2><span class="secnum">${s.num}</span> ${inline(s.title)}</h2>
-        ${isRef ? '' : `<button class="done-toggle" type="button" data-id="${s.id}" aria-pressed="${done.has(s.id)}">${done.has(s.id) ? ICON('tick') + ' Ho tinc' : 'Ho tinc?'}</button>`}</div>
+        ${isRef ? '' : `<div class="sec-actions"><button class="chip listen" type="button" aria-pressed="false">${ICON('play')}<span class="t">Escolta</span></button><button class="done-toggle" type="button" data-id="${s.id}" aria-pressed="${done.has(s.id)}">${done.has(s.id) ? ICON('tick') + ' Ho tinc' : 'Ho tinc?'}</button></div>`}</div>
         <div class="prose">${blocks(s.lines)}</div></section>`).join('')}
       ${quizCard}
       <nav class="chapter-nav">
@@ -465,6 +472,40 @@
     } else window.scrollTo(0, 0);
     if (!isRef) trackReading();
   }
+
+  // ================= ESCOLTA (lectura en veu alta) =================
+  // Només apareix si el dispositiu té una veu en català
+  const TTS = 'speechSynthesis' in window ? window.speechSynthesis : null;
+  let caVoice = null, speakBtn = null;
+  function pickVoice() {
+    if (!TTS) return;
+    caVoice = TTS.getVoices().find(v => /^ca([-_]|$)/i.test(v.lang)) || null;
+    document.body.classList.toggle('tts-ok', !!caVoice);
+  }
+  if (TTS) { pickVoice(); TTS.addEventListener('voiceschanged', pickVoice); }
+  function stopSpeak() {
+    if (TTS) TTS.cancel();
+    if (speakBtn) { speakBtn.setAttribute('aria-pressed', 'false'); speakBtn.querySelector('.t').textContent = 'Escolta'; }
+    speakBtn = null;
+  }
+  function speak(btn) {
+    if (speakBtn === btn) { stopSpeak(); return; }
+    stopSpeak();
+    if (!caVoice) return;
+    const sec = btn.closest('.sec');
+    const text = sec.querySelector('.sec-head h2').innerText + '. ' + sec.querySelector('.prose').innerText;
+    // Frases curtes: alguns navegadors tallen els textos llargs
+    const chunks = (text.replace(/\s+/g, ' ').match(/[^.!?;:]+[.!?;:]*/g) || []).map(c => c.trim()).filter(Boolean);
+    if (!chunks.length) return;
+    speakBtn = btn; btn.setAttribute('aria-pressed', 'true'); btn.querySelector('.t').textContent = 'Atura';
+    chunks.forEach((c, i) => {
+      const u = new SpeechSynthesisUtterance(c);
+      u.voice = caVoice; u.lang = caVoice.lang;
+      if (i === chunks.length - 1) u.onend = () => { if (speakBtn === btn) stopSpeak(); };
+      TTS.speak(u);
+    });
+  }
+  $('#chapter').addEventListener('click', e => { const b = e.target.closest('.listen'); if (b) speak(b); });
 
   // ================= CÈL·LULA =================
   const SVG = {
@@ -1213,6 +1254,24 @@
         '<td data-label="Teoria"><div class="prog-cell"><div class="progress" role="progressbar" aria-label="Teoria del capítol ' + c.num + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + p + '"><span style="width:' + p + '%"></span></div><span>' + p + '%</span></div></td>' +
         '<td data-label="Millor test">' + sc(best['mc:' + c.num]) + '</td><td data-label="Millor mites">' + sc(best['tf:' + c.num]) + '</td></tr>';
     }).join('');
+    // Punts febles: capítols on més convé insistir (teoria, millor test, errors i targetes pendents)
+    const errAll = [...errPool('mc'), ...errPool('tf')];
+    const weak = study.filter(c => c.num <= 6).map(c => {
+      const tp = pct(c.sections.filter(x => done.has(x.id)).length, c.sections.length);
+      const b = best['mc:' + c.num], nErr = errAll.filter(q => q.c === c.num).length;
+      const nPend = GLOSS.filter(g => g.main === c.num && !known.has(g.term)).length;
+      const why = [];
+      if (tp < 50) why.push('Teoria al ' + tp + '%');
+      if (b == null) why.push('Test sense fer'); else if (b < 70) why.push('Millor test: ' + Math.round(b) + '%');
+      if (nErr) why.push(nErr + (nErr === 1 ? ' error' : ' errors') + ' per repassar');
+      if (nPend) why.push(nPend + (nPend === 1 ? ' targeta pendent' : ' targetes pendents'));
+      return { c, why, w: (100 - tp) / 2 + (b == null ? 40 : 100 - b) + nErr * 10 + nPend * 2 };
+    }).filter(x => x.why.length).sort((a, z) => z.w - a.w).slice(0, 3);
+    const started = nDone > 0 || Object.keys(best).length > 0;
+    const weakHTML = '<h2 class="section-title">Els teus punts febles</h2>' + (!started
+      ? '<p class="card empty">Quan hagis estudiat una mica i fet algun test, aquí veuràs quins capítols et convé reforçar.</p>'
+      : weak.length ? '<div class="weak-list">' + weak.map(x => '<div class="card weak" style="--kc:' + kc(x.c.num) + '"><h3>' + x.c.num + '. ' + esc(D.capitols[x.c.num].curt) + '</h3><ul class="weak-why">' + x.why.map(t => '<li>' + t + '</li>').join('') + '</ul><div class="weak-btns"><button class="btn primary small" type="button" data-quiz="mc" data-ch="' + x.c.num + '">Practica el test</button><a class="btn small" href="#teoria/' + x.c.num + '">Repassa la teoria</a></div></div>').join('') + '</div>'
+      : '<p class="card empty">Cap punt feble ara mateix. Molt bé!</p>');
     $('#v-progres').innerHTML =
       '<div class="view-head"><h1>El meu progrés</h1><p>Un resum de tot el que has fet en aquest tema.</p></div>' +
       '<div class="stats">' +
@@ -1221,7 +1280,7 @@
         '<div class="card stat"><b>' + nErrs + '</b><span>Errors per repassar' + (nErrs ? '<br><a href="#test">Repassa\'ls →</a>' : '') + '</span></div>' +
         '<div class="card stat"><b>' + (Math.round(+get('streak', 0)) || 0) + '</b><span>Millor ratxa<br>al joc Classifica</span></div>' +
       '</div>' +
-      '<h2 class="section-title">Per capítols</h2>' +
+      weakHTML + '<h2 class="section-title">Per capítols</h2>' +
       '<div class="table-wrap"><table class="study-table prog-table"><thead><tr><th scope="col">Capítol</th><th scope="col">Teoria</th><th scope="col">Millor test</th><th scope="col">Millor mites</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '<p class="muted">Millor test general: ' + sc(best['mc:tots']) + ' · Millor mites general: ' + sc(best['tf:tots']) + '</p>';
     $('#v-progres').insertAdjacentHTML('beforeend', rankingSection());

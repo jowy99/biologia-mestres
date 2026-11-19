@@ -1083,3 +1083,15 @@ button:disabled:active, [aria-disabled="true"]:active { transform: none; }
 
 /* Rècords: targeta sense partides, amb vora discontínua com els altres estats buits */
 .best-card.is-empty { border-style: dashed; box-shadow: none; background: transparent; }
+
+/* ---------- Punts febles (Progrés) ---------- */
+.weak-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 12px; }
+.weak { padding: 16px; border-left: 6px solid var(--kc); }
+.weak h3 { margin: 0 0 8px; }
+.weak-why { margin: 0 0 12px; padding-left: 1.1em; color: var(--muted); font-size: .92rem; }
+.weak-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---------- Escolta (teoria) ---------- */
+.sec-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.listen { display: none; }
+.tts-ok .listen { display: inline-flex; }
