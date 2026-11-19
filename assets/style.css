@@ -341,7 +341,7 @@ svg.has-sel .part:not(.sel) { opacity: .18; }
 .cmp-label { font-weight: 600; font-size: .95rem; }
 .cmp-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .cmp-row select { width: auto; min-width: 130px; border-left: 4px solid var(--accent); }
-.cmp-and { font-weight: 600; color: var(--muted); font-size: .9rem; }
+.cmp-and { font-weight: 600; color: var(--muted); font-size: 1rem; }
 /* icon-btn swap: 44 px mínim a mòbil */
 #cmp-swap { width: 44px; height: 44px; margin: 0; border-radius: 50%; }
 .duel { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -438,7 +438,7 @@ svg.has-sel .part:not(.sel) { opacity: .18; }
 .gterm { padding: 14px 16px; }
 .gterm h3 { margin: 0 0 4px; font-size: 1.1rem; }
 .gterm p { margin: 0 0 8px; }
-.gterm .where { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: .8rem; color: var(--muted); }
+.gterm .where { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .8rem; color: var(--muted); }
 .gterm .where button { border: 0; border-radius: 999px; padding: .2em .7em; min-height: 28px; font-size: .8rem; font-weight: 700; color: var(--on-k); background: var(--kc); }
 .gterm .where .more {
   border: 1.5px solid var(--line);
@@ -1080,3 +1080,6 @@ button:disabled:active, [aria-disabled="true"]:active { transform: none; }
 .fc-face.back .lvl-txt { color: var(--muted-on-soft); }
 .fc-actions .btn.yes, .fc-actions .btn.yes:hover { background: var(--ok); border-color: var(--ok); color: var(--surface); }
 .fc-actions .btn.yes .i { stroke: currentColor; }
+
+/* Rècords: targeta sense partides, amb vora discontínua com els altres estats buits */
+.best-card.is-empty { border-style: dashed; box-shadow: none; background: transparent; }

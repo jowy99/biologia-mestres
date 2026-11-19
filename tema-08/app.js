@@ -55,7 +55,7 @@
   }
   function bestCard(g) {
     const list = get('rank', {})[g] || [];
-    if (!list.length) return `<div class="card best-card"><h3>${GAME_NAMES[g]}</h3><p class="muted">Encara no hi has jugat.</p></div>`;
+    if (!list.length) return `<div class="card best-card is-empty"><h3>${GAME_NAMES[g]}</h3><p class="muted">Encara no hi has jugat.</p></div>`;
     const best = list[0], pts = Math.round(+best.p) || 0, acc = best.n > 0 ? Math.round(100 * best.ok / best.n) : 0;
     const m = medalHTML(acc, 'span');
     return `<div class="card best-card"><h3>${GAME_NAMES[g]}</h3><p class="best-score">${pts} pts</p>${m}<p class="best-count">${list.length} partides</p></div>`;
