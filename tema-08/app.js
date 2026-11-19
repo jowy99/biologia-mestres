@@ -1574,53 +1574,110 @@
     5: 'Avui també és un grup natural: els metazous.'
   };
   const CL_N = 8;
+  const CLAU_ORDER = ['cel', 'nucli', 'fong', 'embrio', 'foto'];
+  const CLAU_SHORT = { 0: 'Cap regne', 1: 'Moneres', 2: 'Protoctists', 3: 'Fongs', 4: 'Plantes', 5: 'Animals' };
+  // Explicació breu de cada pregunta (botó «?»)
+  const CLAU_HELP = {
+    cel: 'La cèl·lula és la unitat més petita amb vida pròpia: tots els éssers vius en tenen almenys una. Els virus no en tenen: només són material genètic dins d\'una coberta.',
+    nucli: 'El nucli és un compartiment tancat per una membrana on es guarda l\'ADN. Amb nucli, la cèl·lula és eucariota (com les nostres); sense nucli, és procariota (com els bacteris).',
+    fong: 'Per absorció vol dir que deixa anar enzims a fora, digereix l\'aliment i n\'absorbeix els nutrients, com un bolet sobre la fusta. La quitina és la substància dura de la paret dels fongs.',
+    embrio: 'Un embrió és la primera fase d\'un organisme de moltes cèl·lules, que creix protegit, com dins d\'una llavor o d\'un ou. Les algues i els protozous no en formen.',
+    foto: 'Fer la fotosíntesi vol dir fabricar el propi aliment amb la llum, gràcies als cloroplasts. La cel·lulosa és la substància que fa rígida la paret de les cèl·lules vegetals.'
+  };
+  const CLAU_HOW = `<ol class="clau-how-list">
+      <li>Llegeix el nom de l'organisme i la pista.</li>
+      <li>Respon <b>Sí</b> o <b>No</b> a cada pregunta, de dalt a baix. Cada resposta et porta a la pregunta següent o a un regne.</li>
+      <li>Si no entens una pregunta, toca <b>?</b> i te l'expliquem.</li>
+      <li>Si t'equivoques, et diem per què i ho tornes a provar. Amb <b>Desfés</b> tornes al pas anterior.</li>
+    </ol>`;
   let CL = null;
   function initClau() {
     $('#v-clau').addEventListener('click', e => {
-      const b = e.target.closest('[data-a]');
-      if (b) { clauAnswer(b); return; }
-      if (e.target.closest('#clau-next')) { CL.i++; CL.i < CL.list.length ? clauOrg() : clauEnd(); window.scrollTo(0, 0); }
-      else if (e.target.closest('#clau-again')) newClauRound();
+      const t = e.target;
+      const b = t.closest('[data-a]'); if (b) { clauAnswer(b); return; }
+      const h = t.closest('.cm-help');
+      if (h) { const on = h.getAttribute('aria-expanded') !== 'true'; h.setAttribute('aria-expanded', String(on)); $('#' + h.getAttribute('aria-controls')).hidden = !on; return; }
+      if (t.closest('#clau-undo')) { clauUndo(); return; }
+      if (t.closest('#clau-next')) { CL.i++; CL.i < CL.list.length ? clauOrg() : clauEnd(); window.scrollTo(0, 0); return; }
+      if (t.closest('#clau-start, #clau-again')) { set('clauIntro', 1); newClauRound(); window.scrollTo(0, 0); return; }
+      if (t.closest('#clau-quit, #clau-how')) { clauIntro(); window.scrollTo(0, 0); }
     });
-    newClauRound();
+    get('clauIntro', 0) ? newClauRound() : clauIntro();
   }
   function newClauRound() { CL = { list: drawBag('clau', D.organismes, CL_N, o => o.n), i: 0, clean: 0 }; clauOrg(); }
-  function clauOrg() { Object.assign(CL, { step: 'cel', path: [], miss: 0 }); clauRender(); }
-  const clauHead = () => `<div class="view-head"><h1>Clau dicotòmica</h1><p>Classifica cada organisme responent sí o no, com en una clau de camp.</p></div>
-    <div class="q-meta clau-meta"><span>Organisme ${CL.i + 1} de ${CL.list.length}</span><span>Sense errors: ${CL.clean}</span></div>`;
-  const clauOrgCard = (o, clue) => `<div class="card clau-org"><p class="rp-kicker">Organisme</p><h2>${esc(o.n)}</h2>${o.sci && o.sci !== '—' ? `<p class="sci">${esc(o.sci)}</p>` : ''}${clue ? `<p class="clue">${ICON('bulb')} ${esc(o.p)}</p>` : ''}</div>`;
-  const clauPath = () => CL.path.length ? `<ol class="clau-path">${CL.path.map(p => `<li><span>${p.q}</span><b>${p.a ? 'Sí' : 'No'}</b><small>${p.why}</small></li>`).join('')}</ol>` : '';
+  function clauOrg() { Object.assign(CL, { step: 'cel', path: [], miss: 0, done: null }); clauRender(); }
+  // Pantalla d'inici: què és una clau dicotòmica, com es juga i un exemple resolt
+  function clauIntro() {
+    CL = null;
+    const ex = ['Està format per cèl·lules?', 'Les seves cèl·lules tenen nucli?', 'S\'alimenta per absorció i té paret de quitina?'];
+    $('#v-clau').innerHTML = `<div class="view-head"><h1>Clau dicotòmica</h1><p>Una clau dicotòmica és un camí amb bifurcacions: a cada pas respons sí o no sobre un organisme fins que arribes al seu regne.</p></div>
+      <div class="card clau-intro">
+        <h2>Com funciona</h2>${CLAU_HOW}
+        <h3>Exemple resolt: el xampinyó</h3>
+        <ol class="clau-map">${ex.map((q, i) => `<li class="cm-step is-done"><div class="cm-row"><span class="cm-n">${i + 1}</span><span class="cm-q">${q}</span><b class="cm-ans">Sí</b></div></li>`).join('')}</ol>
+        <p class="cm-end" style="--kc:var(--k3)">${ICON('d-bolet')} Regne Fongs</p>
+        <div class="score-actions"><button class="btn primary" id="clau-start" type="button">Comença · ${CL_N} organismes&nbsp;→</button></div>
+      </div>`;
+  }
+  // Mapa de la clau: totes les preguntes en ordre; cada una diu on porta si la resposta acaba en un regne
+  function clauMap() {
+    const fin = CL.done != null;
+    return `<ol class="clau-map">${CLAU_ORDER.map((s, i) => {
+      const st = CLAU[s], p = CL.path.find(x => x.s === s), now = !fin && s === CL.step;
+      const exits = [[1, st.yes], [0, st.no]].filter(x => typeof x[1] === 'number').map(([a, n]) => `${a ? 'Sí' : 'No'} → ${CLAU_SHORT[n]}`).join(' · ');
+      const cls = p ? 'is-done' : now ? 'is-now' : fin ? 'is-skip' : 'is-later';
+      return `<li class="cm-step ${cls}"${now ? ' aria-current="step"' : ''}>
+        <div class="cm-row"><span class="cm-n">${i + 1}</span><span class="cm-q">${st.q}</span>${p ? `<b class="cm-ans">${p.a ? 'Sí' : 'No'}</b>` : ''}<button class="cm-help" type="button" aria-expanded="false" aria-controls="cmh-${s}" aria-label="Què vol dir aquesta pregunta?">?</button></div>
+        <p class="cm-helptx" id="cmh-${s}" hidden>${glText(CLAU_HELP[s])}</p>
+        ${p ? `<p class="cm-why">${p.why}</p>` : ''}
+        ${now ? `<div class="clau-btns"><button class="btn" type="button" data-a="1">Sí</button><button class="btn" type="button" data-a="0">No</button></div><div id="clau-fb" aria-live="polite"></div>` : ''}
+        <p class="cm-exit">${exits}</p>
+      </li>`;
+    }).join('')}</ol>`;
+  }
   function clauRender() {
-    const o = CL.list[CL.i], st = CLAU[CL.step];
-    $('#v-clau').innerHTML = `${clauHead()}${clauOrgCard(o, true)}${clauPath()}
-      <div class="card clau-q"><p class="rp-kicker">Pregunta ${CL.path.length + 1}</p><h3>${st.q}</h3>
-        <div class="clau-btns"><button class="btn" type="button" data-a="1">Sí</button><button class="btn" type="button" data-a="0">No</button></div>
-        <div id="clau-fb" aria-live="polite"></div></div>`;
+    const o = CL.list[CL.i], fin = CL.done != null, last = CL.i === CL.list.length - 1;
+    const res = fin ? `<div class="card clau-res" style="--kc:var(--k${o.k})"><p class="rp-kicker">Resultat${CL.miss ? '' : ' · sense errors'}</p><h3>${KICO[o.k] ? ICON(KICO[o.k]) : ''} ${CLAU_K[o.k]}</h3>
+        <p>${glText(o.e)}</p><p class="clau-now"><b>Visió actual:</b> ${CLAU_NOW[o.k]}</p><p>${secLink(o.s)}</p>
+        <div class="score-actions"><button class="btn primary" id="clau-next" type="button">${last ? 'Veure el resultat' : 'Següent organisme&nbsp;→'}</button></div></div>` : '';
+    $('#v-clau').innerHTML = `<div class="view-head"><h1>Clau dicotòmica</h1></div>
+      <div class="q-meta clau-meta"><span>Organisme ${CL.i + 1} de ${CL.list.length}</span><span>Sense errors: ${CL.clean}</span></div>
+      <div class="qbar clau-bar"><span style="width:${CL.i / CL.list.length * 100}%"></span></div>
+      <details class="clau-how"><summary>${ICON('bulb')} Com funciona?</summary>${CLAU_HOW}</details>
+      <div class="card clau-org"><p class="rp-kicker">Organisme</p><h2>${esc(o.n)}</h2>${o.sci && o.sci !== '—' ? `<p class="sci">${esc(o.sci)}</p>` : ''}<p class="clue">${ICON('bulb')} <span>Pista: ${glText(o.p)}</span></p></div>
+      ${clauMap()}${res}
+      <div class="clau-tools"><button class="btn small" id="clau-undo" type="button"${CL.path.length ? '' : ' disabled'}>${ICON('reset')} Desfés l'últim pas</button><button class="btn small" id="clau-quit" type="button">Surt</button></div>`;
+    if (fin) $('#clau-next').focus({ preventScroll: true });
   }
   function clauAnswer(b) {
     const o = CL.list[CL.i], st = CLAU[CL.step], a = b.dataset.a === '1';
     if (st.ans(o.k) !== a) {
       CL.miss++; b.disabled = true; b.classList.add('wrong');
-      $('#clau-fb').innerHTML = `<div class="explain"><b class="bad">No ben bé.</b> ${st.why[+!a]}</div>`;
+      $('#clau-fb').innerHTML = `<div class="explain"><b class="bad">No ben bé.</b> ${glText(st.why[+!a])} Torna-ho a provar.</div>`;
       return;
     }
-    CL.path.push({ q: st.q, a, why: st.why[+a] });
+    CL.path.push({ s: CL.step, a, why: st.why[+a] });
     const next = a ? st.yes : st.no;
-    if (typeof next === 'string') { CL.step = next; clauRender(); return; }
-    if (!CL.miss) CL.clean++;
-    const last = CL.i === CL.list.length - 1;
-    $('#v-clau').innerHTML = `${clauHead()}${clauOrgCard(o, false)}${clauPath()}
-      <div class="card clau-res" style="--kc:var(--k${o.k})"><p class="rp-kicker">Resultat${CL.miss ? '' : ' · sense errors'}</p><h3>${CLAU_K[o.k]}</h3>
-        <p>${esc(o.e)}</p><p class="clau-now"><b>Visió actual:</b> ${CLAU_NOW[o.k]}</p><p>${secLink(o.s)}</p>
-        <div class="score-actions"><button class="btn primary" id="clau-next" type="button">${last ? 'Veure el resultat' : 'Següent organisme →'}</button></div></div>`;
-    $('#clau-next').focus();
+    if (typeof next === 'string') CL.step = next;
+    else { CL.done = next; if (!CL.miss) CL.clean++; }
+    clauRender();
+    const cur = $('#v-clau .is-now, #v-clau .clau-res');
+    if (cur) cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  // Desfà l'última resposta (també després d'arribar al regne)
+  function clauUndo() {
+    if (!CL || !CL.path.length) return;
+    const p = CL.path.pop();
+    if (CL.done != null) { CL.done = null; if (!CL.miss) CL.clean--; }
+    CL.step = p.s;
+    clauRender();
   }
   function clauEnd() {
     const best = get('best', {}), rec = CL.clean > 0 && (best.clau == null || CL.clean > best.clau);
     if (rec) { best.clau = CL.clean; set('best', best); }
-    $('#v-clau').innerHTML = `<div class="view-head"><h1>Clau dicotòmica</h1><p>Classifica cada organisme responent sí o no, com en una clau de camp.</p></div>
+    $('#v-clau').innerHTML = `<div class="view-head"><h1>Clau dicotòmica</h1></div>
       <div class="card score"><div class="big">${CL.clean}/${CL.list.length}</div><p>Organismes classificats <b>sense cap error</b>${rec ? ' · Nou rècord!' : ''}</p>
-      <div class="score-actions"><button class="btn primary" id="clau-again" type="button">Una altra ronda</button></div></div>`;
+      <div class="score-actions"><button class="btn primary" id="clau-again" type="button">Una altra ronda</button><button class="btn" id="clau-how" type="button">Com funciona?</button></div></div>`;
   }
 
   // ================= SUBRATLLATS I NOTES =================

@@ -1100,19 +1100,12 @@ button:disabled:active, [aria-disabled="true"]:active { transform: none; }
 .ex-table { margin: 16px 0; text-align: left; }
 
 /* ---------- Clau dicotòmica ---------- */
-.clau-meta, .clau-org, .clau-path, .clau-q, .clau-res { max-width: 760px; }
+.clau-meta, .clau-org, .clau-res, .clau-intro, .clau-how, .clau-map, .clau-tools, .clau-bar { max-width: 760px; }
 .clau-org { padding: 18px; margin-bottom: 12px; }
 .clau-org h2 { margin: 0; }
 .clau-org .sci { margin: 2px 0 0; font-style: italic; color: var(--muted); }
 .clau-org .clue { display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
 .clau-org .clue .i { flex: none; width: 1.1em; height: 1.1em; margin-top: .25em; color: var(--accent); }
-.clau-path { list-style: none; display: grid; gap: 10px; margin: 0 0 12px 8px; padding: 2px 0 2px 16px; border-left: 3px solid var(--accent); }
-.clau-path li { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; }
-.clau-path li span { font-weight: 600; }
-.clau-path li b { padding: 2px 12px; border-radius: 999px; font-size: .85rem; background: var(--accent-soft); color: var(--ink); }
-.clau-path li small { grid-column: 1 / -1; color: var(--muted); }
-.clau-q { padding: 20px; }
-.clau-q h3 { margin: 0 0 14px; font-size: 1.25rem; }
 .clau-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .clau-btns .btn { min-height: 52px; font-size: 1.05rem; }
 #v-clau .clau-btns .btn.wrong { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); }
@@ -1300,3 +1293,41 @@ h1, h2, h3 { text-wrap: balance; }
 .nowrap { white-space: nowrap; }
 @media (max-width: 600px) { .toast { bottom: calc(92px + env(safe-area-inset-bottom)); } }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+
+/* ---------- Clau dicotòmica: mapa del camí ---------- */
+.clau-intro { padding: 20px; }
+.clau-intro h2 { margin: 0 0 8px; }
+.clau-intro h3 { margin: 20px 0 12px; font-size: 1.05rem; }
+.clau-how-list { display: grid; gap: 6px; margin: 0; padding-left: 1.3em; }
+.clau-how { margin: 0 0 12px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.clau-how summary { display: flex; align-items: center; gap: 6px; min-height: 36px; font-weight: 600; cursor: pointer; }
+.clau-how summary .i { width: 18px; height: 18px; color: var(--accent); }
+.clau-how[open] .clau-how-list { margin: 6px 0 6px; }
+.clau-org .clue span { flex: 1; }
+.clau-map { list-style: none; display: grid; margin: 0 0 12px; padding: 0; }
+.cm-step { position: relative; padding: 0 0 16px 44px; }
+.cm-step::before { content: ""; position: absolute; left: 15px; top: 34px; bottom: 2px; width: 2px; background: var(--line); }
+.cm-step:last-child::before { display: none; }
+.cm-row { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.cm-n { position: absolute; left: 0; top: 0; display: grid; place-items: center; width: 32px; height: 32px; border: 2px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--muted); font-weight: 700; font-size: .9rem; }
+.cm-q { flex: 1; font-weight: 600; }
+.cm-ans { flex: none; padding: 2px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: .85rem; }
+.cm-help { flex: none; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface-2); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+.cm-help[aria-expanded="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.cm-help:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.cm-helptx { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: .95rem; }
+.cm-why { margin: 4px 0 0; color: var(--muted); font-size: .9rem; }
+.cm-exit { margin: 4px 0 0; color: var(--muted); font-size: .82rem; }
+.cm-step.is-done .cm-n { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.cm-step.is-done::before { background: var(--accent); }
+.cm-step.is-now .cm-n { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.cm-step.is-now .cm-q { font-size: 1.1rem; }
+.cm-step.is-now .clau-btns { margin-top: 12px; }
+.cm-step.is-now #clau-fb .explain { margin-top: 10px; }
+.cm-step.is-later .cm-q, .cm-step.is-skip .cm-q { color: var(--muted); font-weight: 500; }
+.cm-end { display: flex; align-items: center; gap: 8px; margin: 0 0 4px 44px; padding: 10px 14px; border-left: 4px solid var(--kc); border-radius: 12px; background: color-mix(in srgb, var(--kc) 12%, var(--surface)); font-weight: 700; }
+.cm-end .i { width: 22px; height: 22px; color: var(--kc); }
+.clau-res h3 { display: flex; align-items: center; gap: 8px; }
+.clau-res h3 .i { flex: none; width: 28px; height: 28px; color: var(--kc); }
+.clau-tools { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.clau-tools .btn .i { width: 16px; height: 16px; }
