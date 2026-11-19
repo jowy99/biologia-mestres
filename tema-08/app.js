@@ -171,7 +171,7 @@
   };
 
   // ================= NAVEGACIÓ =================
-  const VIEWS = ['teoria', 'cellula', 'comparar', 'targetes', 'test', 'classifica', 'glossari', 'progres'];
+  const VIEWS = ['teoria', 'repas', 'cellula', 'comparar', 'targetes', 'test', 'classifica', 'glossari', 'progres'];
   const inited = {};
   let pendingQuiz = null; // test d'un capítol demanat des de la teoria
   function route() {
@@ -180,7 +180,7 @@
     stopSpeak();
     $$('.tab').forEach(t => t.dataset.view === v ? t.setAttribute('aria-current', 'page') : t.removeAttribute('aria-current'));
     // Si la vista activa està al menú «Més», marca també el botó
-    const MES = ['comparar', 'classifica', 'glossari', 'progres'];
+    const MES = ['repas', 'comparar', 'classifica', 'glossari', 'progres'];
     const bn = $('.bn-more');
     if (bn) { MES.includes(v) ? bn.setAttribute('aria-current', 'page') : bn.removeAttribute('aria-current'); }
     document.title = (v === 'teoria' ? 'Teoria' : $(`.tab[data-view="${v}"]`).textContent.trim()) + ' · Els cinc regnes';
@@ -188,7 +188,9 @@
     // Tanca el popover del glossari en canviar de vista
     const glpop = $('#gl-pop'); if (glpop) glpop.hidden = true;
     if (v !== 'cellula' && inited.cellula) cellGameExit();
-    if (!inited[v]) { inited[v] = true; INIT[v](); } else if (v === 'progres') renderProgres();
+    // Sortir de la pestanya Test abandona el simulacre en curs
+    if (v !== 'test' && EX) { clearInterval(EX.tick); EX = null; quizSetup(); }
+    if (!inited[v]) { inited[v] = true; INIT[v](); } else if (v === 'progres') renderProgres(); else if (v === 'repas') repasHome();
     // Si arriba hi ha pendingQuiz, saltem la configuració i comencem el quiz
     if (v === 'test' && pendingQuiz) {
       const opt = { mode: pendingQuiz.mode, ch: pendingQuiz.ch, n: 999 };
@@ -1021,15 +1023,10 @@
   function mark(ok) {
     if (!deck.length) return;
     const g = deck[fcI % deck.length];
-    const lvl = getLvl();
-    const known = new Set(get('known', []));
+    rateTerm(g.term, ok);
     if (ok) {
-      known.add(g.term);
-      lvl[g.term] = Math.min((lvl[g.term] ?? 0) + 1, 5);
       fcI++;
     } else {
-      known.delete(g.term);
-      lvl[g.term] = 0;
       const idx = fcI % deck.length;
       const nextG = deck[(idx + 1) % deck.length];
       const pos = deck.length < 4 ? deck.length : Math.min(idx + 3, deck.length);
@@ -1038,8 +1035,6 @@
       fcI = newIdx >= 0 ? newIdx : deck.length - 1;
       if (fcOnlyPending) { deck.splice(fcI % deck.length, 1); if (deck.length) fcI = fcI % deck.length; }
     }
-    set('known', [...known]);
-    set('lvl', lvl);
     showCard();
   }
 
@@ -1085,9 +1080,10 @@
           <div class="opt-cards" data-f="mode" role="group" aria-labelledby="lbl-mode">
             <button class="opt-card" type="button" data-v="mc" aria-pressed="true"><b>Preguntes tipus test</b><span>${D.preguntes.length} preguntes amb quatre opcions</span></button>
             <button class="opt-card" type="button" data-v="tf" aria-pressed="false"><b>Vertader o fals</b><span>${D.mites.length} mites per desmuntar</span></button>
+            <button class="opt-card" type="button" data-v="exam" aria-pressed="false"><b>${ICON('timer')} Simulacre d'examen</b><span>20 preguntes de tot el tema · ${EXAM_MIN} minuts</span></button>
           </div>
         </div>
-        <div class="setup-row">
+        <div class="setup-row" id="q-filters">
           <div class="setup-field grow">
             <label class="setup-label" for="q-ch">Capítol</label>
             <select class="select" id="q-ch"><option value="tots">Tots els capítols</option>${chs.map(c => `<option value="${c}">${c}. ${D.capitols[c].curt}</option>`).join('')}</select>
@@ -1104,8 +1100,11 @@
       </div>`;
     // Actualitza el rècord i el text del botó (quantes preguntes sortiran de veritat)
     const refresh = () => {
-      const b = best[opt.mode + ':' + opt.ch];
+      const exam = opt.mode === 'exam';
+      $('#q-filters').hidden = exam;
+      const b = best[exam ? 'exam' : opt.mode + ':' + opt.ch];
       $('#q-best').textContent = b != null ? `La teva millor puntuació aquí: ${b}%` : '';
+      if (exam) { $('#q-go').textContent = 'Comença el simulacre · 20 preguntes →'; return; }
       const avail = SRC[opt.mode]().filter(q => opt.ch === 'tots' || q.c === +opt.ch).length;
       const k = Math.min(opt.n, avail);
       $('#q-go').textContent = `Comença · ${k} ${k === 1 ? 'pregunta' : 'preguntes'} →`;
@@ -1119,6 +1118,7 @@
     $('#q-ch').addEventListener('change', e => { opt.ch = e.target.value; refresh(); });
     refresh();
     $('#q-go').addEventListener('click', () => {
+      if (opt.mode === 'exam') return startExam();
       const pool = drawBag('q:' + opt.mode + ':' + opt.ch, SRC[opt.mode]().filter(q => opt.ch === 'tots' || q.c === +opt.ch), opt.n, q => q.q || q.t);
       if (!pool.length) { alert('No hi ha preguntes d\'aquest tipus per a aquest capítol.'); return; }
       startQuiz(opt, pool, false);
@@ -1169,6 +1169,75 @@
         <button class="btn${left ? '' : ' primary'}" id="q-again" type="button">Un altre test</button>
       </div></div>`;
     $('#q-again').addEventListener('click', quizSetup);
+  }
+
+  // ================= SIMULACRE D'EXAMEN =================
+  // 15 preguntes tipus test + 5 de vertader o fals, repartides per capítols, amb temps límit i sense correcció fins al final
+  const EXAM_MIN = 20;
+  let EX = null;
+  function spread(list, n) {
+    const by = {};
+    shuffle(list).forEach(q => (by[q.c] ||= []).push(q));
+    const groups = Object.values(by), out = [];
+    for (let i = 0; out.length < n && groups.some(g => g.length); i++) { const g = groups[i % groups.length]; if (g.length) out.push(g.pop()); }
+    return out;
+  }
+  function startExam() {
+    if (EX) clearInterval(EX.tick);
+    const items = shuffle([...spread(D.preguntes, 15).map(q => ({ kind: 'mc', q })), ...spread(D.mites, 5).map(q => ({ kind: 'tf', q }))]);
+    EX = { items, i: 0, res: [], end: Date.now() + EXAM_MIN * 60000 };
+    EX.tick = setInterval(examClock, 1000);
+    examQ();
+  }
+  function examClock() {
+    if (!EX) return;
+    const left = Math.max(0, EX.end - Date.now()), el = $('#ex-time');
+    if (el) { el.textContent = `${Math.floor(left / 60000)}:${String(Math.floor(left / 1000) % 60).padStart(2, '0')}`; el.classList.toggle('low', left < 120000); }
+    if (!left) examEnd();
+  }
+  function examQ() {
+    const it = EX.items[EX.i], q = it.q, mc = it.kind === 'mc', n = EX.items.length;
+    const opts = mc ? shuffle(q.o.map((t, j) => ({ t, ok: j === 0 }))) : [{ t: 'Vertader', ok: q.v }, { t: 'Fals', ok: !q.v }];
+    $('#quiz').innerHTML = `<div class="qbar"><span style="width:${EX.i / n * 100}%"></span></div>
+      <div class="card q-card">
+        <div class="q-meta"><span>Simulacre · Pregunta ${EX.i + 1} de ${n}</span><span class="ex-time">${ICON('timer')} <span id="ex-time"></span></span></div>
+        <div class="q-text">${mc ? esc(q.q) : '«' + esc(q.t) + '»'}</div>
+        <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt" type="button" data-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
+      </div>
+      <p style="text-align:center;margin-top:14px"><button class="btn small" id="ex-stop" type="button">Acaba l'examen ara</button></p>`;
+    examClock();
+    $('#ex-stop').addEventListener('click', () => { if (confirm('Vols acabar l\'examen? Les preguntes sense respondre compten com a errors.')) examEnd(); });
+    $$('#quiz .opt').forEach(b => b.addEventListener('click', () => {
+      if (!EX) return;
+      const right = opts[+b.dataset.j].ok;
+      $$('#quiz .opt').forEach(x => { x.disabled = true; });
+      b.classList.add('picked');
+      EX.res.push({ right });
+      noteAnswer(it.kind, q, right);
+      setTimeout(() => { if (!EX) return; EX.i++; EX.i < EX.items.length ? examQ() : examEnd(); }, 250);
+    }));
+  }
+  function examEnd() {
+    if (!EX) return;
+    clearInterval(EX.tick);
+    const n = EX.items.length, ok = EX.res.filter(r => r.right).length, pct = Math.round(ok / n * 100);
+    const used = Math.min(EXAM_MIN * 60000, Date.now() - (EX.end - EXAM_MIN * 60000));
+    const best = get('best', {}), rec = best.exam == null || pct > best.exam;
+    if (rec) { best.exam = pct; set('best', best); }
+    const byCh = {};
+    EX.items.forEach((it, i) => { const c = it.q.c; byCh[c] ||= { ok: 0, n: 0 }; byCh[c].n++; if (EX.res[i] && EX.res[i].right) byCh[c].ok++; });
+    const wrong = EX.items.filter((it, i) => !(EX.res[i] && EX.res[i].right));
+    const mins = Math.floor(used / 60000), secs = Math.floor(used / 1000) % 60;
+    EX = null;
+    $('#quiz').innerHTML = `<div class="card score"><div class="big">${(pct / 10).toLocaleString('ca', { maximumFractionDigits: 1 })}</div>
+      <p><b>${ok} de ${n}</b> encerts (nota sobre 10) · ${mins} min ${secs} s${rec ? ' · Nou rècord!' : ''}</p>
+      <div class="table-wrap"><table class="study-table ex-table"><thead><tr><th scope="col">Capítol</th><th scope="col">Encerts</th></tr></thead><tbody>
+        ${Object.keys(byCh).sort((a, b) => a - b).map(c => `<tr><td><a href="#teoria/${c}">${c}. ${esc(D.capitols[c].curt)}</a></td><td data-label="Encerts">${byCh[c].ok} de ${byCh[c].n}</td></tr>`).join('')}
+      </tbody></table></div>
+      ${wrong.length ? `<div class="review"><h3>Repassa aquestes:</h3><ul>${wrong.map(it => `<li><b>${esc(qKey(it.q))}</b><br>${esc(it.q.e)} ${secLink(it.q.s)}</li>`).join('')}</ul></div>` : ''}
+      <div class="score-actions"><button class="btn primary" id="ex-again" type="button">Un altre simulacre</button><button class="btn" id="ex-back" type="button">Torna al test</button></div></div>`;
+    $('#ex-again').addEventListener('click', startExam);
+    $('#ex-back').addEventListener('click', quizSetup);
   }
 
   // ================= CLASSIFICA =================
@@ -1233,6 +1302,119 @@
       const b = e.target.closest('[data-ch]'); if (b) location.hash = `teoria/${b.dataset.ch}`;
     });
     render('');
+  }
+
+  // ================= REPÀS D'AVUI =================
+  // Sessió curta que barreja les preguntes fallades i les targetes que encara no domines; porta el compte de dies seguits
+  const dayKey = (ms = Date.now()) => new Date(ms).toLocaleDateString('sv');
+  function getDaily() { const d = get('daily', null); return d && typeof d === 'object' ? d : { last: '', streak: 0, best: 0 }; }
+  function curStreak() { const d = getDaily(); return d.last === dayKey() || d.last === dayKey(Date.now() - 864e5) ? Math.round(+d.streak) || 0 : 0; }
+  function bumpDaily() {
+    const d = getDaily(), t = dayKey();
+    if (d.last !== t) {
+      d.streak = d.last === dayKey(Date.now() - 864e5) ? (Math.round(+d.streak) || 0) + 1 : 1;
+      d.best = Math.max(Math.round(+d.best) || 0, d.streak); d.last = t;
+      set('daily', d);
+    }
+    return d;
+  }
+  // Puntua un terme (també el fan servir les Targetes): encert = puja de nivell; error = torna a 0
+  function rateTerm(term, ok) {
+    const lvl = getLvl(), known = new Set(get('known', []));
+    if (ok) { known.add(term); lvl[term] = Math.min((lvl[term] ?? 0) + 1, 5); }
+    else { known.delete(term); lvl[term] = 0; }
+    set('known', [...known]); set('lvl', lvl);
+  }
+  function repasPlan() {
+    const lvl = getLvl();
+    const qs = [...errPool('mc').map(q => ({ kind: 'mc', q })), ...errPool('tf').map(q => ({ kind: 'tf', q }))];
+    const weak = shuffle(GLOSS.filter(g => g.term in lvl && lvl[g.term] < 3)).sort((a, b) => lvl[a.term] - lvl[b.term]);
+    const fresh = shuffle(GLOSS.filter(g => !(g.term in lvl)));
+    return { qs, weak, fresh };
+  }
+  let RP = null;
+  function repasHome() {
+    RP = null;
+    const { qs, weak, fresh } = repasPlan(), due = qs.length + weak.length, d = getDaily(), doneToday = d.last === dayKey(), st = curStreak();
+    const nNew = Math.min(fresh.length, Math.max(0, 12 - Math.min(qs.length, 6) - weak.length));
+    const parts = [
+      qs.length && `${qs.length} ${qs.length === 1 ? 'pregunta fallada' : 'preguntes fallades'}`,
+      weak.length && `${weak.length} ${weak.length === 1 ? 'targeta per reforçar' : 'targetes per reforçar'}`,
+      nNew && `${nNew} ${nNew === 1 ? 'terme nou' : 'termes nous'}`
+    ].filter(Boolean);
+    $('#v-repas').innerHTML = `<div class="view-head"><h1>Repàs d'avui</h1><p>Cinc minuts al dia: el que has fallat i el que encara no domines, barrejat.</p></div>
+      <div class="stats repas-stats">
+        <div class="card stat"><b>${st}</b><span>${ICON('flame')} ${st === 1 ? 'dia seguit' : 'dies seguits'}</span></div>
+        <div class="card stat"><b>${Math.round(+d.best) || 0}</b><span>Millor ratxa</span></div>
+      </div>
+      <div class="card repas-start">
+        ${doneToday ? `<p class="repas-done">${ICON('tick')} Ja has fet el repàs d'avui. Si vols, en pots fer un altre.</p>` : ''}
+        <h2>${due ? `Tens ${due} ${due === 1 ? 'cosa' : 'coses'} per repassar` : 'Avui toca aprendre termes nous'}</h2>
+        <p class="muted">${parts.join(' · ') || 'Ja ho domines tot. Torna demà!'}</p>
+        ${parts.length ? `<button class="btn primary" id="rp-go" type="button">${doneToday ? 'Fes un altre repàs' : 'Comença el repàs'} →</button>` : ''}
+      </div>`;
+    const go = $('#rp-go');
+    if (go) go.addEventListener('click', startRepas);
+  }
+  function startRepas() {
+    const { qs, weak, fresh } = repasPlan();
+    const q6 = shuffle(qs).slice(0, 6);
+    const cards = [...weak, ...fresh].slice(0, 12 - q6.length).map(g => ({ kind: 'card', g }));
+    RP = { items: shuffle([...q6, ...cards]), i: 0, ok: 0 };
+    if (!RP.items.length) { repasHome(); return; }
+    repasItem();
+  }
+  function repasItem() {
+    const it = RP.items[RP.i], n = RP.items.length;
+    const head = `<div class="qbar"><span style="width:${RP.i / n * 100}%"></span></div><div class="q-meta"><span>Repàs d'avui · ${RP.i + 1} de ${n}</span><span>Encerts: ${RP.ok}</span></div>`;
+    if (it.kind === 'card') {
+      $('#v-repas').innerHTML = `${head}<div class="card q-card rp-card">
+        <p class="rp-kicker">Targeta</p><div class="rp-term">${esc(it.g.term)}</div>
+        <div class="rp-def" id="rp-def" hidden>${inline(it.g.def)}</div>
+        <div class="rp-actions" id="rp-act"><button class="btn primary" id="rp-show" type="button">Mostra la definició</button></div></div>`;
+      $('#rp-show').addEventListener('click', () => {
+        $('#rp-def').hidden = false;
+        $('#rp-act').innerHTML = `<button class="btn no" type="button" data-ok="0">${ICON('x')} Encara no</button><button class="btn yes" type="button" data-ok="1">${ICON('tick')} Ja ho sé</button>`;
+        $('#rp-act [data-ok="1"]').focus();
+      });
+      $('#rp-act').addEventListener('click', e => {
+        const b = e.target.closest('[data-ok]'); if (!b) return;
+        const ok = b.dataset.ok === '1';
+        rateTerm(it.g.term, ok);
+        if (ok) RP.ok++;
+        repasNext();
+      });
+      return;
+    }
+    const q = it.q, mc = it.kind === 'mc';
+    const opts = mc ? shuffle(q.o.map((t, j) => ({ t, ok: j === 0 }))) : [{ t: 'Vertader', ok: q.v }, { t: 'Fals', ok: !q.v }];
+    $('#v-repas').innerHTML = `${head}<div class="card q-card">
+      <p class="rp-kicker">${mc ? 'Pregunta que vas fallar' : 'Mite que vas fallar'}</p>
+      <div class="q-text">${mc ? esc(q.q) : '«' + esc(q.t) + '»'}</div>
+      <div class="${mc ? 'opts' : 'tf'}">${opts.map((o, j) => `<button class="opt" type="button" data-j="${j}">${mc ? `<span class="l">${'ABCD'[j]}</span>` : ''}<span>${esc(o.t)}</span></button>`).join('')}</div>
+      <div id="rp-exp" aria-live="polite"></div></div>`;
+    $$('#v-repas .opt').forEach(b => b.addEventListener('click', () => {
+      const j = +b.dataset.j, right = opts[j].ok;
+      $$('#v-repas .opt').forEach((x, k) => { x.disabled = true; if (opts[k].ok) x.classList.add('right'); });
+      if (!right) b.classList.add('wrong'); else RP.ok++;
+      noteAnswer(it.kind, q, right);
+      $('#rp-exp').innerHTML = `<div class="explain"><b class="${right ? 'ok' : 'bad'}">${right ? '✓ Correcte!' : '✗ No és correcte.'}</b> ${esc(q.e)}<br>${secLink(q.s)}</div>
+        <p style="text-align:right;margin:14px 0 0"><button class="btn primary" id="rp-next" type="button">Següent →</button></p>`;
+      $('#rp-next').focus();
+      $('#rp-next').addEventListener('click', repasNext);
+    }));
+  }
+  function repasNext() {
+    RP.i++;
+    RP.i < RP.items.length ? repasItem() : repasEnd();
+    window.scrollTo(0, 0);
+  }
+  function repasEnd() {
+    const d = bumpDaily(), n = RP.items.length;
+    $('#v-repas').innerHTML = `<div class="card score"><div class="big">${RP.ok}/${n}</div>
+      <p><b>Repàs fet!</b> ${ICON('flame')} ${d.streak} ${d.streak === 1 ? 'dia seguit' : 'dies seguits'}${d.streak > 1 && d.streak === d.best ? ' · Rècord de ratxa!' : ''}</p>
+      <div class="score-actions"><button class="btn primary" id="rp-home" type="button">Fet</button></div></div>`;
+    $('#rp-home').addEventListener('click', repasHome);
   }
 
   // ================= PROGRÉS =================
@@ -1318,6 +1500,6 @@
   // Després d'imprimir, buida el resum perquè no quedi amagat dins la pàgina
   window.addEventListener('afterprint', () => { const area = $('#print-area'); if (area) { area.innerHTML = ''; area.setAttribute('aria-hidden', 'true'); } });
 
-  const INIT = { teoria: initTeoria, cellula: initCellula, comparar: initComparar, targetes: initTargetes, test: initTest, classifica: initClassifica, glossari: initGlossari, progres: renderProgres };
+  const INIT = { teoria: initTeoria, cellula: initCellula, comparar: initComparar, targetes: initTargetes, test: initTest, classifica: initClassifica, glossari: initGlossari, progres: renderProgres, repas: repasHome };
   route();
 })();

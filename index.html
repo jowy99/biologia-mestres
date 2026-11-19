@@ -62,6 +62,11 @@
     const secOk = last != null && lastSec && lastSec.startsWith('s' + last + '-');
     const secTxt = secOk && /^s\d+-\d+$/.test(lastSec) ? ' (apartat ' + lastSec.slice(1).replace('-', '.') + ')' : '';
     const started = last != null || done > 0;
+    // Repàs d'avui: preguntes fallades + targetes de nivell baix, i dies seguits
+    const lvl = store.get(t.clau + ':lvl', {}) || {}, errs = store.get(t.clau + ':errs', {}) || {};
+    const due = (errs.mc || []).length + (errs.tf || []).length + Object.values(lvl).filter(v => v < 3).length;
+    const daily = store.get(t.clau + ':daily', null), dk = ms => new Date(ms).toLocaleDateString('sv');
+    const streak = daily && (daily.last === dk(Date.now()) || daily.last === dk(Date.now() - 864e5)) ? Math.round(+daily.streak) || 0 : 0;
     actius.insertAdjacentHTML('beforeend', `<article class="card feature">
       <div class="feature-num" aria-hidden="true">${num}</div>
       <div class="feature-body">
@@ -70,6 +75,7 @@
         <p>${t.desc}</p>
         <div class="feature-prog"><div class="progress" role="progressbar" aria-label="Teoria estudiada" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div>
           <small>Teoria estudiada: <b>${pct}%</b>${total ? ` (${done} de ${total} apartats)` : ''}</small></div>
+        <a class="repas-link" href="${t.url}#repas"><span class="repas-ico">${ICON('flame')}</span><span class="repas-txt"><b>Repàs d'avui</b><small>${due ? due + (due === 1 ? ' cosa per repassar' : ' coses per repassar') : 'Aprèn termes nous'}${streak ? ' · ' + streak + (streak === 1 ? ' dia seguit' : ' dies seguits') : ''}</small></span><span aria-hidden="true">→</span></a>
         <div class="feature-actions">
           ${started ? `<a class="btn primary" href="${t.url}#teoria">Continua on ho vas deixar${secTxt} →</a><a class="btn" href="${t.url}">Obre el tema</a>`
                      : `<a class="btn primary" href="${t.url}#teoria/0">Comença a estudiar →</a>`}
