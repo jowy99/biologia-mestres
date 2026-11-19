@@ -1070,3 +1070,13 @@ button:disabled:active, [aria-disabled="true"]:active { transform: none; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239a9db1' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
 }
+
+/* ---------- Targetes: ajuda de teclat només amb teclat; nivell visible; «Ja ho sé» destacat ---------- */
+.kbd-only { display: none; }
+@media (hover: hover) and (pointer: fine) { .kbd-only { display: inline; } }
+.lvl-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 10px; }
+.lvl-wrap .lvl { margin: 0; }
+.lvl-txt { font-size: .78rem; font-weight: 600; color: var(--muted); }
+.fc-face.back .lvl-txt { color: var(--muted-on-soft); }
+.fc-actions .btn.yes, .fc-actions .btn.yes:hover { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.fc-actions .btn.yes .i { stroke: currentColor; }

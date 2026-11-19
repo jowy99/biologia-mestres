@@ -965,17 +965,17 @@
     if (!deck.length) {
       $('#fc-front').innerHTML = '<span class="term">Fet!</span><span class="def">No queden targetes pendents en aquest grup.</span>';
       $('#fc-back').innerHTML = '';
-      $('#fc-stats').textContent = `Saps ${nk} de ${scope.length} termes`;
+      $('#fc-stats').textContent = `${nk} de ${scope.length} apreses`;
       return;
     }
     const g = deck[fcI % deck.length];
     const lvl = getLvl();
     const lv = lvl[g.term] ?? 0;
     const dots = Array.from({ length: 5 }, (_, i) => `<i class="${i < lv ? 'on' : ''}"></i>`).join('');
-    const t = `<span class="term">${esc(g.term)}</span><span class="lvl" aria-label="Domini ${lv} de 5">${dots}</span>`, d = `<span class="def">${inline(g.def)}</span>`;
+    const t = `<span class="term">${esc(g.term)}</span><span class="lvl-wrap"><span class="lvl" aria-hidden="true">${dots}</span><span class="lvl-txt">Nivell ${lv} de 5</span></span>`, d = `<span class="def">${inline(g.def)}</span>`;
     $('#fc-front').innerHTML = fcRev ? d : t;
     $('#fc-back').innerHTML = fcRev ? t : d;
-    $('#fc-stats').textContent = `Targeta ${fcI % deck.length + 1} de ${deck.length} · Saps ${nk} de ${scope.length} termes${known.has(g.term) ? ' · ✓ ja la saps' : ''}`;
+    $('#fc-stats').textContent = `Targeta ${fcI % deck.length + 1} / ${deck.length} · ${nk} de ${scope.length} apreses${known.has(g.term) ? ' · ✓ ja la saps' : ''}`;
   }
   function mark(ok) {
     if (!deck.length) return;

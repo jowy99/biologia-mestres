@@ -121,11 +121,11 @@
   <!-- TARGETES -->
   <section class="view" id="v-targetes" hidden>
     <div class="fc-wrap">
-      <div class="view-head"><h1>Targetes de memòria</h1><p>Toca la targeta (o prem Espai) per girar-la i marca si ja ho saps. Amb el teclat: ← encara no, → ja ho sé.</p></div>
+      <div class="view-head"><h1>Targetes de memòria</h1><p>Toca la targeta per girar-la i marca si ja la saps.<span class="kbd-only"> Amb el teclat: Espai la gira, ← encara no, → ja ho sé.</span></p></div>
       <div class="fc-controls" id="fc-controls"></div>
       <button class="flashcard" id="flashcard" type="button">
         <span class="fc-inner">
-          <span class="fc-face front" id="fc-face-front"><span id="fc-front"></span><span class="hint">Toca per girar · Espai</span></span>
+          <span class="fc-face front" id="fc-face-front"><span id="fc-front"></span><span class="hint">Toca per girar<span class="kbd-only"> · Espai</span></span></span>
           <span class="fc-face back" id="fc-face-back" aria-hidden="true"><span id="fc-back"></span><span class="hint">Toca per tornar</span></span>
         </span>
       </button>
@@ -184,7 +184,7 @@
   <button class="tab" type="button" data-view="cellula"><i data-i="microscope"></i> Cèl·lula</button>
   <button class="tab" type="button" data-view="test"><i data-i="check"></i> Test</button>
   <button class="tab" type="button" data-view="targetes"><i data-i="cards"></i> Targetes</button>
-  <button class="bn-more" type="button" aria-expanded="false" aria-controls="bn-menu"><i data-i="shapes"></i> Més</button>
+  <button class="bn-more" type="button" aria-expanded="false" aria-controls="bn-menu"><i data-i="more"></i> Més</button>
 </nav>
 <div class="bn-menu" id="bn-menu" hidden>
   <button class="tab" type="button" data-view="comparar"><i data-i="scale"></i> Comparar</button>
