@@ -40,7 +40,7 @@ function registrar(rel) {
 }
 
 // Archivos raíz (whitelist)
-for (const f of ['index.html', '.htaccess', 'manifest.webmanifest', 'sw.js']) {
+for (const f of ['index.html', '404.html', '.htaccess', 'manifest.webmanifest', 'sw.js']) {
   const src = join(root, f);
   if (existsSync(src)) {
     copyFileSync(src, join(publicarDir, f));

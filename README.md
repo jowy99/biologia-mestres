@@ -48,3 +48,5 @@ node build.mjs
 3. Cada vez que publiques cambios, sube la versión de la caché en `sw.js` (`biologia-v17` → `biologia-v18…`) para que los navegadores descarguen la versión nueva.
 
 El archivo `.htaccess` añade cabeceras de seguridad si el hosting usa Apache.
+
+Si alguien abre una dirección que no existe, el hosting muestra `404.html`. Si la web no está en la raíz del dominio sino en una subcarpeta, cambia en `.htaccess` la ruta de `ErrorDocument` y el enlace «Torna a l'inici» de `404.html` (por ejemplo, `/biologia/404.html` y `/biologia/`).

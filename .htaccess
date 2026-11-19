@@ -5,6 +5,8 @@
   Header always set Referrer-Policy "no-referrer"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
 </IfModule>
+# Pàgina pròpia per a les adreces que no existeixen
+ErrorDocument 404 /404.html
 # No servir los archivos de trabajo
 RedirectMatch 404 ^/?(_tareas|build\.mjs|README\.md)(/.*)?$
 RedirectMatch 404 /manual\.md$
