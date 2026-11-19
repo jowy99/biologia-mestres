@@ -1259,10 +1259,11 @@
 
   // ================= CLASSIFICA =================
   const GK = [{ k: 1, n: 'Moneres' }, { k: 2, n: 'Protoctists' }, { k: 3, n: 'Fongs' }, { k: 4, n: 'Plantes' }, { k: 5, n: 'Animals' }, { k: 0, n: 'Cap regne (no cel·lular)' }];
+  const KICO = { 1: 'd-bacteri', 2: 'd-alga', 3: 'd-bolet', 4: 'd-fulla', 5: 'd-pota' };
   let G = null;
   function initClassifica() {
     G = { list: drawBag('org', D.organismes, 12, o => o.n), i: 0, ok: 0, done: 0, streak: 0, best: get('streak', 0), run: newRun() };
-    $('#g-choices').innerHTML = GK.map(x => `<button class="kchoice" type="button" data-k="${x.k}" style="--kc:${x.k ? `var(--k${x.k})` : 'var(--k8)'}">${x.n}</button>`).join('');
+    $('#g-choices').innerHTML = GK.map(x => `<button class="kchoice" type="button" data-k="${x.k}" style="--kc:${x.k ? `var(--k${x.k})` : 'var(--k8)'}">${KICO[x.k] ? ICON(KICO[x.k]) : ''}<span>${x.n}</span></button>`).join('');
     $('#g-choices').addEventListener('click', e => { const b = e.target.closest('.kchoice'); if (b && !b.disabled) answerG(+b.dataset.k); });
     showOrg();
   }

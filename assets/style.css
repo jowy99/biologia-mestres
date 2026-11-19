@@ -160,32 +160,8 @@ main:focus { outline: none; }
 .hero { padding: 40px 0 8px; }
 .hero h1 { font-size: clamp(2rem, 6vw, 3.2rem); margin: 0 0 8px; }
 .hero p { margin: 0; color: var(--muted); max-width: 62ch; font-size: 1.05rem; }
-.temes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 16px; margin-top: 28px; }
-.tema {
-  position: relative; display: flex; flex-direction: column; gap: 8px; padding: 20px; text-decoration: none; color: var(--ink);
-  min-height: 190px; transition: transform .15s, border-color .15s;
-}
-a.tema:hover { transform: translateY(-3px); border-color: var(--accent); }
-.tema .num { font-family: var(--font-display); font-size: 2.6rem; line-height: 1; color: var(--accent); font-weight: 700; }
-.tema h2 { margin: 0; font-size: 1.25rem; }
-.tema p { margin: 0; color: var(--muted); font-size: .95rem; }
-.tema.off { opacity: .6; box-shadow: none; border-style: dashed; min-height: 150px; }
-.tema.off .num { color: var(--muted); }
-.tema .tag { align-self: flex-start; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: .15em .6em; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
-.tema .tag.on { background: var(--accent-soft); color: var(--accent); }
 .progress { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: auto; }
 .progress > span { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s; }
-.dots { display: flex; gap: 5px; }
-.dots i { width: 12px; height: 12px; border-radius: 50%; display: block; }
-.feature { display: grid; grid-template-columns: auto 1fr; gap: 8px 28px; padding: 28px; margin-top: 28px; border-top: 6px solid var(--accent); }
-.feature-num { font-family: var(--font-display); font-weight: 700; font-size: clamp(3.5rem, 10vw, 6rem); line-height: .9; color: var(--accent); }
-.feature-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.feature h2 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.2rem); }
-.feature p { margin: 0; color: var(--muted); max-width: 60ch; }
-.feature .tag { align-self: flex-start; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: .2em .7em; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
-.feature-prog { display: grid; gap: 6px; max-width: 420px; margin-top: 4px; }
-.feature-prog small { color: var(--muted); }
-.feature-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .altres { margin-top: 40px; }
 .altres h2 { font-size: 1.15rem; margin: 0 0 12px; color: var(--muted); }
 .altres-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 8px; }
@@ -552,8 +528,6 @@ mark { background: color-mix(in srgb, var(--b-clas) 30%, transparent); color: in
   .flashcard { height: auto; }
   .brand-text small { display: none; }
   .tf { grid-template-columns: 1fr 1fr; }
-  .feature { grid-template-columns: 1fr; padding: 20px; }
-  .feature-num { font-size: 3rem; }
   .duel-tab thead th { position: sticky; top: 0; z-index: 1; }
   .duel-tab tbody th { display: none; }
   .duel-tab td.cell-label { width: 100%; padding-right: 8px; }
@@ -813,8 +787,6 @@ button[aria-disabled="true"],
 button:disabled:active, [aria-disabled="true"]:active { transform: none; }
 
 /* ---------- Informació: que NO sembli botó ---------- */
-.tag,
-.feature .tag,
 .diff-tag,
 .badge,
 .altres-list li {
@@ -1209,3 +1181,53 @@ h1, h2, h3 { text-wrap: balance; }
   body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
   .sel-bar { bottom: calc(92px + env(safe-area-inset-bottom)); }
 }
+
+/* ---------- Icones de dos tons ---------- */
+.i .d { fill: currentColor; fill-opacity: .22; stroke: none; }
+
+/* ---------- Portada ---------- */
+.hero-card {
+  position: relative; overflow: hidden; display: grid; gap: 6px; justify-items: start;
+  margin-top: 24px; padding: 24px; border: 0;
+  background: linear-gradient(135deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 35%, var(--surface)));
+}
+.hero-kicker { font-weight: 700; color: var(--accent); }
+.hero-card h2 { margin: 0; font-size: clamp(1.8rem, 6vw, 2.6rem); max-width: calc(100% - 120px); }
+.hero-card p { margin: 0 0 12px; color: var(--muted-on-soft); max-width: 46ch; }
+.hero-card .btn.primary { min-height: 48px; padding: 0 24px; }
+.hero-art { position: absolute; top: 14px; right: 14px; width: clamp(96px, 18vw, 150px); height: auto; }
+.home-grid { display: grid; gap: 12px; margin-top: 12px; }
+@media (min-width: 700px) { .home-grid { grid-template-columns: 1fr 1fr; } }
+.home-grid .repas-link { margin: 0; }
+.prog-card { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; padding: 14px 16px; }
+.prog-ico { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); }
+.prog-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.prog-row span { color: var(--accent); font-weight: 700; }
+.prog-card .progress { margin: 0; }
+.prog-card small { display: block; margin-top: 6px; color: var(--muted); font-size: .82rem; }
+.quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.quick a, .regnes-row a { display: grid; justify-items: center; gap: 6px; color: var(--ink); text-decoration: none; font-weight: 600; text-align: center; }
+.quick a { padding: 14px 4px 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); font-size: .85rem; }
+.quick .ico { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: color-mix(in srgb, var(--c) 15%, var(--surface)); color: var(--c); }
+.quick .ico .i { width: 26px; height: 26px; }
+.regnes { margin-top: 28px; }
+.regnes h2 { margin: 0 0 12px; font-size: 1.15rem; }
+.regnes-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.regnes-row a { font-size: .8rem; }
+.regnes-row .ico { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: color-mix(in srgb, var(--c) 18%, var(--surface)); color: var(--c); }
+.regnes-row .ico .i { width: 28px; height: 28px; }
+@media (hover: hover) {
+  .quick a:hover { border-color: var(--c); }
+  .regnes-row a:hover .ico { box-shadow: 0 0 0 2px var(--c); }
+}
+@media (max-width: 600px) {
+  .hero-card { padding: 20px; }
+  .hero-card h2 { max-width: calc(100% - 96px); }
+  .hero-art { width: 92px; }
+  .hero-card .btn.primary { width: 100%; }
+  .regnes-row .ico { width: 50px; height: 50px; }
+}
+
+/* ---------- Classifica: icona del regne als botons ---------- */
+.kchoice { display: flex; align-items: center; gap: 10px; }
+.kchoice .i { flex: none; width: 24px; height: 24px; color: var(--kc); }

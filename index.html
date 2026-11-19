@@ -67,21 +67,42 @@
     const due = (errs.mc || []).length + (errs.tf || []).length + Object.values(lvl).filter(v => v < 3).length;
     const daily = store.get(t.clau + ':daily', null), dk = ms => new Date(ms).toLocaleDateString('sv');
     const streak = daily && (daily.last === dk(Date.now()) || daily.last === dk(Date.now() - 864e5)) ? Math.round(+daily.streak) || 0 : 0;
-    actius.insertAdjacentHTML('beforeend', `<article class="card feature">
-      <div class="feature-num" aria-hidden="true">${num}</div>
-      <div class="feature-body">
-        <span class="tag on">Tema ${t.num} · Disponible</span>
-        <h2>${t.titol}</h2>
-        <p>${t.desc}</p>
-        <div class="feature-prog"><div class="progress" role="progressbar" aria-label="Teoria estudiada" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div>
-          <small>Teoria estudiada: <b>${pct}%</b>${total ? ` (${done} de ${total} apartats)` : ''}</small></div>
-        <a class="repas-link" href="${t.url}#repas"><span class="repas-ico">${ICON('flame')}</span><span class="repas-txt"><b>Repàs d'avui</b><small>${due ? due + (due === 1 ? ' cosa per repassar' : ' coses per repassar') : 'Aprèn termes nous'}${streak ? ' · ' + streak + (streak === 1 ? ' dia seguit' : ' dies seguits') : ''}</small></span><span aria-hidden="true">→</span></a>
-        <div class="feature-actions">
-          ${started ? `<a class="btn primary" href="${t.url}#teoria">Continua on ho vas deixar${secTxt} →</a><a class="btn" href="${t.url}">Obre el tema</a>`
-                     : `<a class="btn primary" href="${t.url}#teoria/0">Comença a estudiar →</a>`}
-        </div>
-      </div>
-    </article>`);
+    const go = started ? `${t.url}#teoria` : `${t.url}#teoria/0`;
+    const goTxt = started ? `Continua${secTxt}` : 'Comença a estudiar';
+    actius.insertAdjacentHTML('beforeend', `<article class="card hero-card">
+      <svg class="hero-art" viewBox="0 0 120 110" aria-hidden="true" focusable="false">
+        <path d="M86 106c-8-30 2-58 30-80-2 32-10 60-30 80z" style="fill:var(--k4)"/>
+        <path d="M86 106c6-24 14-48 30-80" fill="none" stroke-width="2" style="stroke:var(--surface);opacity:.55"/>
+        <rect x="33" y="56" width="24" height="48" rx="11" style="fill:#f3e3cf"/>
+        <path d="M6 62C6 34 23 16 45 16s39 18 39 46z" style="fill:var(--k5)"/>
+        <circle cx="28" cy="40" r="6" fill="#fff" opacity=".9"/><circle cx="50" cy="30" r="7" fill="#fff" opacity=".9"/><circle cx="66" cy="47" r="5" fill="#fff" opacity=".9"/>
+      </svg>
+      <span class="hero-kicker">Tema ${num}</span>
+      <h2>${t.titol}</h2>
+      <p>${t.desc}</p>
+      <a class="btn primary" href="${go}">${goTxt}&nbsp;→</a>
+    </article>
+    <div class="home-grid">
+      <div class="card prog-card"><span class="prog-ico">${ICON('bars')}</span><div>
+        <div class="prog-row"><b>Teoria estudiada</b><span>${pct}%</span></div>
+        <div class="progress" role="progressbar" aria-label="Teoria estudiada" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div>
+        ${total ? `<small>${done} de ${total} apartats</small>` : ''}</div></div>
+      <a class="repas-link" href="${t.url}#repas"><span class="repas-ico">${ICON('flame')}</span><span class="repas-txt"><b>Repàs d'avui</b><small>${due ? due + (due === 1 ? ' cosa per repassar' : ' coses per repassar') : 'Aprèn termes nous'}${streak ? ' · ' + streak + (streak === 1 ? ' dia seguit' : ' dies seguits') : ''}</small></span><span aria-hidden="true">→</span></a>
+    </div>
+    <nav class="quick" aria-label="Accés ràpid al tema ${t.num}">
+      <a href="${t.url}#teoria" style="--c:var(--accent)"><span class="ico">${ICON('d-book')}</span>Teoria</a>
+      <a href="${t.url}#cellula" style="--c:var(--k2)"><span class="ico">${ICON('d-cell')}</span>Cèl·lula</a>
+      <a href="${t.url}#test" style="--c:var(--k3)"><span class="ico">${ICON('d-trophy')}</span>Test</a>
+      <a href="${t.url}#targetes" style="--c:var(--k5)"><span class="ico">${ICON('d-cards')}</span>Targetes</a>
+    </nav>
+    ${t.num === 8 ? `<section class="regnes" aria-labelledby="h-regnes"><h2 id="h-regnes">Explora els regnes</h2>
+      <div class="regnes-row">
+        <a href="${t.url}#teoria/1" style="--c:var(--k1)"><span class="ico">${ICON('d-bacteri')}</span>Moneres</a>
+        <a href="${t.url}#teoria/2" style="--c:var(--k2)"><span class="ico">${ICON('d-alga')}</span>Protoctists</a>
+        <a href="${t.url}#teoria/3" style="--c:var(--k3)"><span class="ico">${ICON('d-bolet')}</span>Fongs</a>
+        <a href="${t.url}#teoria/4" style="--c:var(--k4)"><span class="ico">${ICON('d-fulla')}</span>Plantes</a>
+        <a href="${t.url}#teoria/5" style="--c:var(--k5)"><span class="ico">${ICON('d-pota')}</span>Animals</a>
+      </div></section>` : ''}`);
   }
 
   /* ---------- Backup: exportar / importar progrés ---------- */
