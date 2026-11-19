@@ -1231,3 +1231,36 @@ h1, h2, h3 { text-wrap: balance; }
 /* ---------- Classifica: icona del regne als botons ---------- */
 .kchoice { display: flex; align-items: center; gap: 10px; }
 .kchoice .i { flex: none; width: 24px; height: 24px; color: var(--kc); }
+
+/* ---------- Icones de navegació: de línia; la pestanya activa s'omple ---------- */
+.tab .i .d, .bn-more .i .d { fill-opacity: 0; transition: fill-opacity .2s; }
+.tab[aria-current="page"] .i .d { fill-opacity: .3; }
+.tab[aria-current="page"] .i, .bn-more[aria-current="page"] .i { stroke-width: 2.3; }
+@media (max-width: 600px) {
+  .bottomnav .tab .i, .bottomnav .bn-more .i { width: 26px; height: 26px; }
+}
+
+/* ---------- Capçalera: a pantalla gran, pestanyes a la mateixa fila que el títol ---------- */
+.topbar .wrap { flex-wrap: wrap; }
+.topbar .tabs { order: 3; flex: 1 1 100%; max-width: none; margin: 0 -16px; padding: 2px 16px 10px; }
+@media (min-width: 1240px) {
+  .topbar .tabs { order: 0; flex: 0 1 auto; margin: 0 0 0 28px; padding: 8px 0; }
+}
+
+/* ---------- Explora els regnes: cercles al mòbil (zona de toc només a la icona i el nom), targetes a pantalla gran ---------- */
+.regnes-row a { justify-self: center; padding: 4px; border-radius: 16px; }
+.rg-txt { display: grid; gap: 2px; }
+.rg-txt b { font-weight: 600; }
+.rg-txt small { display: none; }
+.quick { max-width: 100%; }
+@media (min-width: 900px) {
+  .regnes-row { gap: 12px; }
+  .regnes-row a {
+    justify-self: stretch; grid-template-columns: auto 1fr; justify-items: start; align-items: center; gap: 12px;
+    padding: 12px 14px; border: 1px solid var(--line); background: var(--surface); text-align: left; font-size: .95rem;
+  }
+  .regnes-row .ico { width: 48px; height: 48px; }
+  .rg-txt small { display: block; color: var(--muted); font-weight: 400; font-size: .8rem; line-height: 1.3; }
+  .quick a { grid-template-columns: auto 1fr; justify-items: start; align-items: center; gap: 12px; padding: 12px 16px; font-size: 1rem; text-align: left; }
+}
+@media (hover: hover) and (min-width: 900px) { .regnes-row a:hover { border-color: var(--c); } }
