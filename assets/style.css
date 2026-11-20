@@ -1368,3 +1368,15 @@ h1, h2, h3 { text-wrap: balance; }
 @media (prefers-reduced-motion: reduce) { .to-top { animation: none; } }
 @media (max-width: 600px) { .to-top { bottom: calc(88px + env(safe-area-inset-bottom)); } }
 @media print { .to-top { display: none !important; } }
+
+/* Barra de subratllar i notes: fosca i contrastada, com una barra d'eines */
+.sel-bar { gap: 2px; padding: 6px; border: 0; background: var(--ink); color: var(--bg); box-shadow: 0 10px 30px rgb(0 0 0 / .28); animation: sel-bar-in .15s ease-out; }
+.sel-bar .btn { position: relative; min-height: 44px; padding: 0 16px; gap: 8px; border: 0; border-radius: 999px; background: transparent; color: var(--bg); font-size: .95rem; font-weight: 600; }
+.sel-bar .btn + .btn::before { content: ""; position: absolute; left: -1px; top: 12px; bottom: 12px; width: 1px; background: color-mix(in srgb, var(--bg) 28%, transparent); }
+.sel-bar .btn:active { background: color-mix(in srgb, var(--bg) 20%, transparent); }
+@media (hover: hover) { .sel-bar .btn:hover { background: color-mix(in srgb, var(--bg) 14%, transparent); } }
+.sel-bar .btn:focus-visible { outline: 2px solid var(--bg); outline-offset: -4px; }
+.sel-bar .btn .i { width: 18px; height: 18px; }
+.hl-swatch { flex: none; width: 16px; height: 16px; border-radius: 5px; background: rgb(255 214 64); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .18); }
+@keyframes sel-bar-in { from { opacity: 0; transform: translate(-50%, 6px); } }
+@media (prefers-reduced-motion: reduce) { .sel-bar { animation: none; } }
