@@ -656,7 +656,7 @@ i[data-i] { display: inline-block; width: 18px; height: 18px; flex: none; vertic
 .switch input:checked + .switch-track::after { transform:translateX(18px); }
 .switch input:focus-visible + .switch-track { outline:3px solid var(--accent); outline-offset:2px; }
 .switch input:disabled ~ * { opacity:.45; cursor:not-allowed; }
-.sel-bar { min-height:44px; display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.cell-selbar { min-height:44px; display:flex; align-items:center; gap:8px; margin-bottom:6px; }
 .sel-hint { color:var(--muted); font-weight:600; font-size:.9rem; }
 .sel-label { color:var(--muted); font-size:.9rem; font-weight:600; }
 .sel-chip { display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 8px 0 14px; border-radius:999px; border:1.5px solid var(--accent); background:var(--accent-soft); color:var(--ink); font-weight:700; cursor:pointer; }
@@ -668,7 +668,7 @@ i[data-i] { display: inline-block; width: 18px; height: 18px; flex: none; vertic
 .part { cursor:pointer; }
 
 /* ---------- Jocs de la cèl·lula ---------- */
-#v-cellula.playing #cell-info, #v-cellula.playing #sel-bar, #v-cellula.playing #game-launch { display: none; }
+#v-cellula.playing #cell-info, #v-cellula.playing #cell-selbar, #v-cellula.playing #game-launch { display: none; }
 #v-cellula.playing .cell-layout { grid-template-columns: 1fr; }
 #v-cellula.playing .cell-stage { max-width: 760px; margin-inline: auto; }
 #v-cellula.playing .cell-labels { display: none !important; }
@@ -817,7 +817,7 @@ button:disabled:active, [aria-disabled="true"]:active { transform: none; }
 
 /* ---------- Pulit de la vista Cèl·lula ---------- */
 /* Text d'ajuda més visible i centrat */
-.sel-bar { justify-content: center; }
+.cell-selbar { justify-content: center; }
 .sel-hint { font-size: .95rem; }
 /* Dibuix i panell a la mateixa alçada a l'ordinador, dibuix centrat */
 @media (min-width: 901px) {

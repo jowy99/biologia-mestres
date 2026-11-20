@@ -720,7 +720,7 @@
       if (e.target.closest('[data-clear]')) { clearSel(); return; }
       const b = e.target.closest('[data-pp]'); if (b) pickPart(b.dataset.pp);
     });
-    $('#sel-bar').addEventListener('click', e => {
+    $('#cell-selbar').addEventListener('click', e => {
       if (e.target.closest('[data-clear]')) { clearSel(); return; }
     });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#v-cellula').hidden && !GAME) clearSel(); });
@@ -805,7 +805,7 @@
   }
   // Pinta la barra de selecció
   function selUI(p) {
-    const bar = $('#sel-bar');
+    const bar = $('#cell-selbar');
     if (!p) { bar.innerHTML = '<span class="sel-hint" id="sel-hint">Toca una part del dibuix per veure què és</span>'; return; }
     bar.innerHTML = `<span class="sel-label">Seleccionat:</span> <button type="button" class="sel-chip" data-clear>${D.parts[p].nom} ${ICON('x')}<span class="sr-only">. Treu la selecció</span></button>`;
   }
