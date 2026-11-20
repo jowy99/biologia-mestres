@@ -208,7 +208,8 @@
     <h2 id="note-title">Nota</h2>
     <blockquote id="note-quote"></blockquote>
     <label class="setup-label" for="note-text">La teva nota</label>
-    <textarea id="note-text" rows="4" maxlength="2000"></textarea>
+    <textarea id="note-text" rows="4" maxlength="2000" aria-describedby="note-count"></textarea>
+    <p class="note-count" id="note-count">0 / 2000</p>
     <div class="note-actions">
       <button class="btn" value="del" type="submit">Esborra el subratllat</button>
       <span class="spacer"></span>
@@ -217,6 +218,18 @@
     </div>
   </form>
 </dialog>
+<dialog class="note-dlg confirm-dlg" id="quit-dlg" aria-labelledby="quit-title" aria-describedby="quit-msg">
+  <form method="dialog">
+    <h2 id="quit-title">Vols sortir del test?</h2>
+    <p id="quit-msg"></p>
+    <div class="note-actions">
+      <span class="spacer"></span>
+      <button class="btn" value="quit" type="submit">Surt</button>
+      <button class="btn primary" value="stay" type="submit" autofocus>Continua</button>
+    </div>
+  </form>
+</dialog>
+<button class="to-top" id="to-top" type="button" aria-label="Torna a dalt" hidden><i data-i="up"></i></button>
 
 <script src="contingut.js" defer></script>
 <script src="dades.js" defer></script>

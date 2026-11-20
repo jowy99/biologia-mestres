@@ -265,6 +265,22 @@
     location.hash = 'test';
   });
   window.addEventListener('hashchange', route);
+  // Botó «Torna a dalt»: només a la Teoria, quan ja has baixat una mica i tornes a pujar (així no tapa el text mentre llegeixes)
+  const toTop = $('#to-top');
+  let lastY = 0;
+  const updTop = () => {
+    const y = window.scrollY, up = y < lastY - 4, down = y > lastY + 4;
+    if ($('#v-teoria').hidden || y < 800) toTop.hidden = true;
+    else if (up) toTop.hidden = false;
+    else if (down) toTop.hidden = true;
+    if (up || down) lastY = y;
+  };
+  window.addEventListener('scroll', updTop, { passive: true });
+  window.addEventListener('hashchange', updTop);
+  toTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    $('#main').focus({ preventScroll: true });
+  });
 
   // ================= MENÚ «Més» DE LA BARRA DE DALT =================
   // És un popover (es tanca sol en tocar fora o amb Esc); es col·loca just sota el botó
@@ -1245,9 +1261,18 @@
   const qHead = k => `<div class="qbar"><span style="width:${Q.i / Q.pool.length * 100}%"></span></div>
       <div class="q-nav"><button class="btn small" id="q-back" type="button"${k ? '' : ' disabled'}>←&nbsp;Anterior</button><button class="btn small" id="q-quit" type="button">Surt del test</button></div>`;
   function navQ(k) {
-    $('#q-quit').addEventListener('click', quizSetup);
+    $('#q-quit').addEventListener('click', quitQ);
     if (k) $('#q-back').addEventListener('click', () => reviewQ(k - 1));
   }
+  // «Surt del test»: si ja has respost alguna pregunta i en queden, demana confirmació
+  function quitQ() {
+    const done = Q.hist.filter(h => h && h.j != null).length, n = Q.pool.length;
+    if (!done || done >= n) return quizSetup();
+    $('#quit-msg').textContent = `Portes ${done} de ${n} preguntes. Si surts ara, el resultat no es guardarà; les preguntes que has fallat sí, per repassar-les.`;
+    $('#quit-dlg').showModal();
+  }
+  // Com a les notes, decideix el botó premut; Esc o «Continua» tanquen sense fer res
+  $('#quit-dlg form').addEventListener('submit', e => { if (e.submitter && e.submitter.value === 'quit') quizSetup(); });
   function askQ() {
     const q = Q.pool[Q.i], mc = Q.opt.mode === 'mc';
     Q.run.t0 = Date.now();
@@ -1812,9 +1837,17 @@
     noteT = t;
     $('#note-quote').textContent = '«' + x.q + '»';
     $('#note-text').value = x.n;
+    noteCount();
     $('#note-dlg').showModal();
     $('#note-text').focus();
   }
+  // Comptador de caràcters de la nota: avisa quan en queden menys de 200
+  function noteCount() {
+    const len = $('#note-text').value.length, c = $('#note-count');
+    c.textContent = `${len} / 2000`;
+    c.classList.toggle('is-near', 2000 - len < 200);
+  }
+  $('#note-text').addEventListener('input', noteCount);
   // El botó premut decideix què passa (Desa / Esborra / Cancel·la); Esc tanca sense canviar res
   $('#note-dlg form').addEventListener('submit', e => {
     const act = e.submitter && e.submitter.value, notes = getNotes(), i = notes.findIndex(n => n.t === noteT);

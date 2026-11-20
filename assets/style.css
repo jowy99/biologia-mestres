@@ -1347,3 +1347,24 @@ h1, h2, h3 { text-wrap: balance; }
 /* ---------- Joc de la cèl·lula: com es confirma la resposta ---------- */
 .game-hint { flex-basis: 100%; margin: 0; color: var(--muted); font-size: .9rem; text-align: center; }
 #game-foot [data-check]:disabled, #game-foot .game-confirm:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Confirmació en sortir del test */
+.confirm-dlg { width: min(420px, calc(100% - 32px)); }
+.confirm-dlg h2 { font-size: 1.25rem; }
+.confirm-dlg p { margin: 0; color: var(--muted); line-height: 1.5; }
+.confirm-dlg .note-actions { margin-top: 20px; }
+@media (max-width: 420px) { .confirm-dlg .note-actions .btn { flex: 1 1 0; justify-content: center; } .confirm-dlg .note-actions .spacer { display: none; } }
+
+/* Comptador de la nota */
+.note-count { margin: 6px 2px 0; text-align: right; font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.note-count.is-near { color: var(--bad); font-weight: 600; }
+
+/* Botó «Torna a dalt» */
+.to-top { position: fixed; right: 16px; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 40; display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--ink); box-shadow: var(--shadow); cursor: pointer; animation: to-top-in .2s ease-out; }
+.to-top[hidden] { display: none; }
+.to-top .i { width: 22px; height: 22px; }
+@media (hover: hover) { .to-top:hover { background: var(--surface-2); } }
+@keyframes to-top-in { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .to-top { animation: none; } }
+@media (max-width: 600px) { .to-top { bottom: calc(88px + env(safe-area-inset-bottom)); } }
+@media print { .to-top { display: none !important; } }
